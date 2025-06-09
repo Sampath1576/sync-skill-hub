@@ -4,8 +4,13 @@ import { AppSidebar } from "@/components/AppSidebar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { FileText, CheckSquare, Calendar, Brain, TrendingUp, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useNavigate } from "react-router-dom"
+import { useToast } from "@/hooks/use-toast"
 
 export default function Dashboard() {
+  const navigate = useNavigate()
+  const { toast } = useToast()
+
   const stats = [
     { title: "Notes Created", value: "24", icon: FileText, change: "+12%" },
     { title: "Tasks Completed", value: "18", icon: CheckSquare, change: "+8%" },
@@ -25,6 +30,46 @@ export default function Dashboard() {
     { title: "Update portfolio", due: "This week", priority: "low" },
   ]
 
+  const getAIInsights = () => {
+    toast({
+      title: "AI Insights Generated",
+      description: "Your personalized productivity insights are ready!",
+    })
+    console.log("AI insights requested")
+  }
+
+  const viewNote = (noteTitle: string) => {
+    toast({
+      title: "Opening note",
+      description: `Loading "${noteTitle}"`,
+    })
+    navigate("/notes")
+  }
+
+  const completeTask = (taskTitle: string) => {
+    toast({
+      title: "Task completed!",
+      description: `"${taskTitle}" marked as complete`,
+    })
+    console.log("Task completed:", taskTitle)
+  }
+
+  const viewAllNotes = () => {
+    navigate("/notes")
+  }
+
+  const viewAllTasks = () => {
+    navigate("/tasks")
+  }
+
+  const refreshTip = () => {
+    toast({
+      title: "New tip loaded",
+      description: "Here's a fresh productivity tip for you!",
+    })
+    console.log("AI tip refreshed")
+  }
+
   return (
     <div className="flex h-screen bg-background">
       <AppSidebar />
@@ -39,7 +84,7 @@ export default function Dashboard() {
                 <h1 className="text-3xl font-bold">Welcome back, John!</h1>
                 <p className="text-muted-foreground mt-1">Here's what's happening with your productivity today.</p>
               </div>
-              <Button className="gap-2">
+              <Button className="gap-2" onClick={getAIInsights}>
                 <Brain className="h-4 w-4" />
                 Get AI Insights
               </Button>
@@ -48,13 +93,13 @@ export default function Dashboard() {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {stats.map((stat, index) => (
-                <Card key={stat.title} className="card-hover animate-scale-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                <Card key={stat.title} className="card-hover animate-scale-in cursor-pointer" style={{ animationDelay: `${index * 0.1}s` }}>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
                         <p className="text-3xl font-bold">{stat.value}</p>
-                        <p className="text-sm text-success font-medium">{stat.change}</p>
+                        <p className="text-sm text-green-600 font-medium">{stat.change}</p>
                       </div>
                       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                         <stat.icon className="h-6 w-6 text-primary" />
@@ -88,10 +133,10 @@ export default function Dashboard() {
                           ))}
                         </div>
                       </div>
-                      <Button variant="ghost" size="sm">View</Button>
+                      <Button variant="ghost" size="sm" onClick={() => viewNote(note.title)}>View</Button>
                     </div>
                   ))}
-                  <Button variant="outline" className="w-full">View All Notes</Button>
+                  <Button variant="outline" className="w-full" onClick={viewAllNotes}>View All Notes</Button>
                 </CardContent>
               </Card>
 
@@ -113,18 +158,18 @@ export default function Dashboard() {
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-1 text-xs rounded-full ${
                           task.priority === 'high' ? 'bg-destructive/10 text-destructive' :
-                          task.priority === 'medium' ? 'bg-warning/10 text-warning' :
+                          task.priority === 'medium' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400' :
                           'bg-muted text-muted-foreground'
                         }`}>
                           {task.priority}
                         </span>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => completeTask(task.title)}>
                           <CheckSquare className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
                   ))}
-                  <Button variant="outline" className="w-full">View All Tasks</Button>
+                  <Button variant="outline" className="w-full" onClick={viewAllTasks}>View All Tasks</Button>
                 </CardContent>
               </Card>
             </div>
@@ -132,9 +177,14 @@ export default function Dashboard() {
             {/* AI Tips */}
             <Card className="mt-6 animate-fade-in" style={{ animationDelay: "0.6s" }}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Brain className="h-5 w-5" />
-                  AI Productivity Tip
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Brain className="h-5 w-5" />
+                    AI Productivity Tip
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={refreshTip}>
+                    Refresh
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>

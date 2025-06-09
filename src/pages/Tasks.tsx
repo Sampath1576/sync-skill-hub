@@ -13,12 +13,32 @@ import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar, Clock, Plus, Filter, Edit, Trash2 } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+
+interface Task {
+  id: number
+  title: string
+  description: string
+  status: "todo" | "in-progress" | "done"
+  priority: "high" | "medium" | "low"
+  dueDate: string
+  tags: string[]
+  completed: boolean
+}
 
 export default function Tasks() {
   const [view, setView] = useState("list")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [newTaskTitle, setNewTaskTitle] = useState("")
+  const [newTaskDescription, setNewTaskDescription] = useState("")
+  const [newTaskPriority, setNewTaskPriority] = useState<"high" | "medium" | "low">("medium")
+  const [newTaskDueDate, setNewTaskDueDate] = useState("")
+  const [newTaskTags, setNewTaskTags] = useState("")
+  const { toast } = useToast()
   
-  const tasks = [
+  const [tasks, setTasks] = useState<Task[]>([
     {
       id: 1,
       title: "Complete React assignment",
@@ -69,24 +89,129 @@ export default function Tasks() {
       tags: ["writing", "react"],
       completed: true
     }
-  ]
+  ])
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "high": return "text-destructive bg-destructive/10"
-      case "medium": return "text-warning bg-warning/10"
+      case "medium": return "text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/20"
       case "low": return "text-muted-foreground bg-muted"
       default: return "text-muted-foreground bg-muted"
     }
   }
 
-  const TaskCard = ({ task }: { task: any }) => (
+  const toggleTaskCompletion = (taskId: number) => {
+    setTasks(prev => prev.map(task => {
+      if (task.id === taskId) {
+        const newStatus = task.completed ? "todo" : "done"
+        const updatedTask = { 
+          ...task, 
+          completed: !task.completed,
+          status: newStatus as "todo" | "in-progress" | "done"
+        }
+        toast({
+          title: updatedTask.completed ? "Task completed!" : "Task reopened",
+          description: `"${task.title}" marked as ${updatedTask.completed ? "complete" : "incomplete"}`,
+        })
+        return updatedTask
+      }
+      return task
+    }))
+  }
+
+  const editTask = (task: Task) => {
+    setEditingTask(task)
+    setNewTaskTitle(task.title)
+    setNewTaskDescription(task.description)
+    setNewTaskPriority(task.priority)
+    setNewTaskDueDate(task.dueDate)
+    setNewTaskTags(task.tags.join(", "))
+    setIsDialogOpen(true)
+  }
+
+  const deleteTask = (taskId: number) => {
+    const task = tasks.find(t => t.id === taskId)
+    setTasks(prev => prev.filter(task => task.id !== taskId))
+    toast({
+      title: "Task deleted",
+      description: `"${task?.title}" has been deleted`,
+      variant: "destructive"
+    })
+  }
+
+  const saveTask = () => {
+    if (!newTaskTitle.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a task title",
+        variant: "destructive"
+      })
+      return
+    }
+
+    const tags = newTaskTags.split(",").map(tag => tag.trim()).filter(tag => tag)
+    
+    if (editingTask) {
+      setTasks(prev => prev.map(task => 
+        task.id === editingTask.id 
+          ? { 
+              ...task, 
+              title: newTaskTitle, 
+              description: newTaskDescription, 
+              priority: newTaskPriority,
+              dueDate: newTaskDueDate,
+              tags 
+            }
+          : task
+      ))
+      toast({
+        title: "Task updated",
+        description: `"${newTaskTitle}" has been updated`,
+      })
+    } else {
+      const newTask: Task = {
+        id: Math.max(...tasks.map(t => t.id)) + 1,
+        title: newTaskTitle,
+        description: newTaskDescription,
+        status: "todo",
+        priority: newTaskPriority,
+        dueDate: newTaskDueDate,
+        tags,
+        completed: false
+      }
+      setTasks(prev => [newTask, ...prev])
+      toast({
+        title: "Task created",
+        description: `"${newTaskTitle}" has been created`,
+      })
+    }
+
+    setIsDialogOpen(false)
+    resetForm()
+  }
+
+  const resetForm = () => {
+    setNewTaskTitle("")
+    setNewTaskDescription("")
+    setNewTaskPriority("medium")
+    setNewTaskDueDate("")
+    setNewTaskTags("")
+    setEditingTask(null)
+  }
+
+  const openNewTaskDialog = () => {
+    resetForm()
+    setIsDialogOpen(true)
+  }
+
+  const TaskCard = ({ task }: { task: Task }) => (
     <Card className="card-hover group">
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-start gap-3 flex-1">
             <Checkbox 
               checked={task.completed}
+              onCheckedChange={() => toggleTaskCompletion(task.id)}
               className="mt-1"
             />
             <div className="flex-1">
@@ -97,10 +222,20 @@ export default function Tasks() {
             </div>
           </div>
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0"
+              onClick={() => editTask(task)}
+            >
               <Edit className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0 text-destructive"
+              onClick={() => deleteTask(task.id)}
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -126,7 +261,7 @@ export default function Tasks() {
     </Card>
   )
 
-  const KanbanColumn = ({ title, status, tasks }: { title: string, status: string, tasks: any[] }) => (
+  const KanbanColumn = ({ title, status, tasks }: { title: string, status: string, tasks: Task[] }) => (
     <div className="flex-1">
       <div className="bg-muted rounded-lg p-4">
         <h3 className="font-semibold mb-4 flex items-center justify-between">
@@ -160,7 +295,17 @@ export default function Tasks() {
               </div>
               
               <div className="flex items-center gap-4">
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setShowFilters(!showFilters)
+                    toast({
+                      title: "Filters",
+                      description: showFilters ? "Filters hidden" : "Filters shown",
+                    })
+                  }}
+                >
                   <Filter className="h-4 w-4 mr-2" />
                   Filter
                 </Button>
@@ -198,13 +343,21 @@ export default function Tasks() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Create New Task</DialogTitle>
+            <DialogTitle>{editingTask ? "Edit Task" : "Create New Task"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <Input placeholder="Task title..." />
-            <Textarea placeholder="Task description..." />
+            <Input 
+              placeholder="Task title..." 
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+            />
+            <Textarea 
+              placeholder="Task description..." 
+              value={newTaskDescription}
+              onChange={(e) => setNewTaskDescription(e.target.value)}
+            />
             <div className="grid grid-cols-2 gap-4">
-              <Select>
+              <Select value={newTaskPriority} onValueChange={(value: "high" | "medium" | "low") => setNewTaskPriority(value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Priority" />
                 </SelectTrigger>
@@ -214,15 +367,23 @@ export default function Tasks() {
                   <SelectItem value="low">Low</SelectItem>
                 </SelectContent>
               </Select>
-              <Input type="date" />
+              <Input 
+                type="date" 
+                value={newTaskDueDate}
+                onChange={(e) => setNewTaskDueDate(e.target.value)}
+              />
             </div>
-            <Input placeholder="Add tags (comma separated)..." />
+            <Input 
+              placeholder="Add tags (comma separated)..." 
+              value={newTaskTags}
+              onChange={(e) => setNewTaskTags(e.target.value)}
+            />
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={() => setIsDialogOpen(false)}>
-                Create Task
+              <Button onClick={saveTask}>
+                {editingTask ? "Update Task" : "Create Task"}
               </Button>
             </div>
           </div>
@@ -230,8 +391,9 @@ export default function Tasks() {
       </Dialog>
 
       <FloatingActionButton 
-        onClick={() => setIsDialogOpen(true)}
+        onClick={openNewTaskDialog}
         icon={<Plus className="h-6 w-6" />}
+        ariaLabel="Create new task"
       />
     </div>
   )

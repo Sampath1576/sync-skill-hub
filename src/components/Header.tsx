@@ -3,6 +3,8 @@ import { Search, Bell, CircleUser } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/ThemeToggle"
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,22 +14,68 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useToast } from "@/hooks/use-toast"
 
 export function Header() {
+  const [searchTerm, setSearchTerm] = useState("")
+  const navigate = useNavigate()
+  const { toast } = useToast()
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchTerm.trim()) {
+      toast({
+        title: "Search initiated",
+        description: `Searching for: ${searchTerm}`,
+      })
+      console.log("Searching for:", searchTerm)
+    }
+  }
+
+  const handleNotifications = () => {
+    toast({
+      title: "Notifications",
+      description: "You have 3 new notifications",
+    })
+    console.log("Notifications clicked")
+  }
+
+  const handleProfileClick = () => {
+    navigate("/settings")
+    console.log("Profile clicked")
+  }
+
+  const handleLogout = () => {
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out",
+    })
+    navigate("/")
+    console.log("Logout clicked")
+  }
+
   return (
     <header className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center gap-4 flex-1">
-        <div className="relative max-w-md flex-1">
+        <form onSubmit={handleSearch} className="relative max-w-md flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search notes, tasks..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 bg-muted/50 border-0 focus-visible:ring-1"
           />
-        </div>
+        </form>
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" className="h-9 w-9 rounded-full">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-9 w-9 rounded-full" 
+          onClick={handleNotifications}
+          aria-label="Notifications"
+        >
           <Bell className="h-4 w-4" />
         </Button>
         
@@ -54,10 +102,10 @@ export function Header() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleProfileClick}>Profile</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/settings")}>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Log out</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

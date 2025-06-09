@@ -3,8 +3,11 @@ import { ArrowDown, CheckSquare, Brain, Calendar, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Link } from "react-router-dom"
+import { useToast } from "@/hooks/use-toast"
 
 export default function LandingPage() {
+  const { toast } = useToast()
+
   const features = [
     {
       icon: <FileText className="h-8 w-8" />,
@@ -27,6 +30,19 @@ export default function LandingPage() {
       description: "Personalized productivity recommendations"
     }
   ]
+
+  const exploreFeatures = () => {
+    toast({
+      title: "Exploring Features",
+      description: "Scrolling to features section",
+    })
+    
+    // Smooth scroll to features section
+    const featuresSection = document.querySelector('[data-section="features"]')
+    if (featuresSection) {
+      featuresSection.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -68,20 +84,26 @@ export default function LandingPage() {
                   Get Started
                 </Button>
               </Link>
-              <Button variant="outline" size="lg" className="h-12 px-8 text-lg">
+              <Button variant="outline" size="lg" className="h-12 px-8 text-lg" onClick={exploreFeatures}>
                 Explore Features
               </Button>
             </div>
           </div>
           
           <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            <ArrowDown className="h-6 w-6 mx-auto text-muted-foreground animate-bounce" />
+            <button 
+              onClick={exploreFeatures}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Scroll to features"
+            >
+              <ArrowDown className="h-6 w-6 mx-auto animate-bounce" />
+            </button>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-24 bg-muted/30">
+      <section className="py-24 bg-muted/30" data-section="features">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4">Everything you need to stay productive</h2>
@@ -94,11 +116,17 @@ export default function LandingPage() {
             {features.map((feature, index) => (
               <Card 
                 key={feature.title} 
-                className="card-hover animate-fade-in border-0 shadow-sm"
+                className="card-hover animate-fade-in border-0 shadow-sm cursor-pointer group"
                 style={{ animationDelay: `${index * 0.1}s` }}
+                onClick={() => {
+                  toast({
+                    title: feature.title,
+                    description: feature.description,
+                  })
+                }}
               >
                 <CardContent className="p-8 text-center">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6 group-hover:bg-primary/20 transition-colors">
                     <div className="text-primary">
                       {feature.icon}
                     </div>

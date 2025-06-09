@@ -10,12 +10,27 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Edit, Trash2, Search, Plus, Star } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+
+interface Note {
+  id: number
+  title: string
+  content: string
+  tags: string[]
+  lastModified: string
+  favorite: boolean
+}
 
 export default function Notes() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [newNoteTitle, setNewNoteTitle] = useState("")
+  const [newNoteContent, setNewNoteContent] = useState("")
+  const [newNoteTags, setNewNoteTags] = useState("")
+  const [editingNote, setEditingNote] = useState<Note | null>(null)
+  const { toast } = useToast()
   
-  const notes = [
+  const [notes, setNotes] = useState<Note[]>([
     {
       id: 1,
       title: "JavaScript Fundamentals",
@@ -56,13 +71,95 @@ export default function Notes() {
       lastModified: "3 days ago",
       favorite: false
     }
-  ]
+  ])
 
   const filteredNotes = notes.filter(note =>
     note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
     note.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
   )
+
+  const toggleFavorite = (noteId: number) => {
+    setNotes(prev => prev.map(note => 
+      note.id === noteId ? { ...note, favorite: !note.favorite } : note
+    ))
+    const note = notes.find(n => n.id === noteId)
+    toast({
+      title: note?.favorite ? "Removed from favorites" : "Added to favorites",
+      description: `"${note?.title}" ${note?.favorite ? "removed from" : "added to"} favorites`,
+    })
+  }
+
+  const editNote = (note: Note) => {
+    setEditingNote(note)
+    setNewNoteTitle(note.title)
+    setNewNoteContent(note.content)
+    setNewNoteTags(note.tags.join(", "))
+    setIsDialogOpen(true)
+  }
+
+  const deleteNote = (noteId: number) => {
+    const note = notes.find(n => n.id === noteId)
+    setNotes(prev => prev.filter(note => note.id !== noteId))
+    toast({
+      title: "Note deleted",
+      description: `"${note?.title}" has been deleted`,
+      variant: "destructive"
+    })
+  }
+
+  const saveNote = () => {
+    if (!newNoteTitle.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a note title",
+        variant: "destructive"
+      })
+      return
+    }
+
+    const tags = newNoteTags.split(",").map(tag => tag.trim()).filter(tag => tag)
+    
+    if (editingNote) {
+      setNotes(prev => prev.map(note => 
+        note.id === editingNote.id 
+          ? { ...note, title: newNoteTitle, content: newNoteContent, tags, lastModified: "Just now" }
+          : note
+      ))
+      toast({
+        title: "Note updated",
+        description: `"${newNoteTitle}" has been updated`,
+      })
+    } else {
+      const newNote: Note = {
+        id: Math.max(...notes.map(n => n.id)) + 1,
+        title: newNoteTitle,
+        content: newNoteContent,
+        tags,
+        lastModified: "Just now",
+        favorite: false
+      }
+      setNotes(prev => [newNote, ...prev])
+      toast({
+        title: "Note created",
+        description: `"${newNoteTitle}" has been created`,
+      })
+    }
+
+    setIsDialogOpen(false)
+    setNewNoteTitle("")
+    setNewNoteContent("")
+    setNewNoteTags("")
+    setEditingNote(null)
+  }
+
+  const openNewNoteDialog = () => {
+    setEditingNote(null)
+    setNewNoteTitle("")
+    setNewNoteContent("")
+    setNewNoteTags("")
+    setIsDialogOpen(true)
+  }
 
   return (
     <div className="flex h-screen bg-background">
@@ -100,13 +197,37 @@ export default function Notes() {
                     <div className="flex items-start justify-between">
                       <h3 className="font-semibold text-lg leading-tight">{note.title}</h3>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleFavorite(note.id)
+                          }}
+                        >
                           <Star className={`h-4 w-4 ${note.favorite ? 'fill-yellow-400 text-yellow-400' : ''}`} />
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            editNote(note)
+                          }}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            deleteNote(note.id)
+                          }}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -140,35 +261,10 @@ export default function Notes() {
                 <p className="text-muted-foreground mb-4">
                   {searchTerm ? `No notes match "${searchTerm}"` : "Start by creating your first note!"}
                 </p>
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Note
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>Create New Note</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <Input placeholder="Note title..." />
-                      <Textarea 
-                        placeholder="Start writing your note..." 
-                        className="min-h-[300px]"
-                      />
-                      <Input placeholder="Add tags (comma separated)..." />
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                          Cancel
-                        </Button>
-                        <Button onClick={() => setIsDialogOpen(false)}>
-                          Save Note
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                <Button onClick={openNewNoteDialog}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Note
+                </Button>
               </div>
             )}
           </div>
@@ -178,21 +274,31 @@ export default function Notes() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Create New Note</DialogTitle>
+            <DialogTitle>{editingNote ? "Edit Note" : "Create New Note"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <Input placeholder="Note title..." />
+            <Input 
+              placeholder="Note title..." 
+              value={newNoteTitle}
+              onChange={(e) => setNewNoteTitle(e.target.value)}
+            />
             <Textarea 
               placeholder="Start writing your note..." 
               className="min-h-[300px]"
+              value={newNoteContent}
+              onChange={(e) => setNewNoteContent(e.target.value)}
             />
-            <Input placeholder="Add tags (comma separated)..." />
+            <Input 
+              placeholder="Add tags (comma separated)..." 
+              value={newNoteTags}
+              onChange={(e) => setNewNoteTags(e.target.value)}
+            />
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={() => setIsDialogOpen(false)}>
-                Save Note
+              <Button onClick={saveNote}>
+                {editingNote ? "Update Note" : "Save Note"}
               </Button>
             </div>
           </div>
@@ -200,8 +306,9 @@ export default function Notes() {
       </Dialog>
 
       <FloatingActionButton 
-        onClick={() => setIsDialogOpen(true)}
+        onClick={openNewNoteDialog}
         icon={<Plus className="h-6 w-6" />}
+        ariaLabel="Create new note"
       />
     </div>
   )
