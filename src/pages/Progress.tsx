@@ -2,19 +2,22 @@
 import { Header } from "@/components/Header"
 import { AppSidebar } from "@/components/AppSidebar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { TrendingUp, Target, Clock, Trophy, BarChart3, PieChart } from "lucide-react"
+import { TrendingUp, Target, Clock, Trophy, BarChart3, PieChart, Download, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
+import { useState } from "react"
 
 export default function Progress() {
   const { toast } = useToast()
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-  const progressStats = [
+  const [progressStats, setProgressStats] = useState([
     { title: "Tasks Completed", value: "156", total: "200", percentage: 78, icon: Target },
     { title: "Study Hours", value: "42", total: "60", percentage: 70, icon: Clock },
     { title: "Goals Achieved", value: "8", total: "10", percentage: 80, icon: Trophy },
     { title: "Productivity Score", value: "85", total: "100", percentage: 85, icon: TrendingUp },
-  ]
+  ])
 
   const weeklyData = [
     { day: "Mon", tasks: 12, hours: 6 },
@@ -26,12 +29,59 @@ export default function Progress() {
     { day: "Sun", tasks: 3, hours: 2 },
   ]
 
-  const generateReport = () => {
+  const generateReport = async () => {
+    setIsGeneratingReport(true)
     toast({
-      title: "Progress Report",
-      description: "Your detailed progress report is being generated!",
+      title: "Generating Report",
+      description: "Your detailed progress report is being generated...",
     })
-    console.log("Generate report clicked")
+    
+    // Simulate report generation
+    setTimeout(() => {
+      setIsGeneratingReport(false)
+      toast({
+        title: "Report Ready!",
+        description: "Your progress report has been generated and is ready for download.",
+      })
+    }, 3000)
+  }
+
+  const refreshData = async () => {
+    setIsRefreshing(true)
+    toast({
+      title: "Refreshing Data",
+      description: "Updating your latest progress statistics...",
+    })
+    
+    // Simulate data refresh
+    setTimeout(() => {
+      // Update some random values to show refresh worked
+      setProgressStats(prev => prev.map(stat => ({
+        ...stat,
+        percentage: Math.min(100, stat.percentage + Math.floor(Math.random() * 5))
+      })))
+      
+      setIsRefreshing(false)
+      toast({
+        title: "Data Updated",
+        description: "Your progress statistics have been refreshed with the latest data.",
+      })
+    }, 2000)
+  }
+
+  const exportData = () => {
+    toast({
+      title: "Exporting Data",
+      description: "Your progress data is being exported to CSV format...",
+    })
+    
+    // Simulate data export
+    setTimeout(() => {
+      toast({
+        title: "Export Complete",
+        description: "Progress data exported successfully!",
+      })
+    }, 1500)
   }
 
   return (
@@ -48,16 +98,44 @@ export default function Progress() {
                 <h1 className="text-3xl font-bold">Progress Tracker</h1>
                 <p className="text-muted-foreground mt-1">Monitor your productivity and achievements</p>
               </div>
-              <Button className="gap-2" onClick={generateReport}>
-                <BarChart3 className="h-4 w-4" />
-                Generate Report
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  className="gap-2" 
+                  onClick={refreshData}
+                  disabled={isRefreshing}
+                >
+                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="gap-2" 
+                  onClick={exportData}
+                >
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+                <Button 
+                  className="gap-2" 
+                  onClick={generateReport}
+                  disabled={isGeneratingReport}
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  {isGeneratingReport ? 'Generating...' : 'Generate Report'}
+                </Button>
+              </div>
             </div>
 
             {/* Progress Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {progressStats.map((stat, index) => (
-                <Card key={stat.title} className="card-hover">
+                <Card key={stat.title} className="card-hover cursor-pointer" onClick={() => {
+                  toast({
+                    title: stat.title,
+                    description: `Current progress: ${stat.value}/${stat.total} (${stat.percentage}%)`,
+                  })
+                }}>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -92,7 +170,16 @@ export default function Progress() {
                 <CardContent>
                   <div className="space-y-4">
                     {weeklyData.map((day, index) => (
-                      <div key={day.day} className="flex items-center justify-between">
+                      <div 
+                        key={day.day} 
+                        className="flex items-center justify-between hover:bg-muted/50 p-2 rounded cursor-pointer transition-colors"
+                        onClick={() => {
+                          toast({
+                            title: `${day.day} Activity`,
+                            description: `${day.tasks} tasks completed, ${day.hours} hours studied`,
+                          })
+                        }}
+                      >
                         <span className="text-sm font-medium w-12">{day.day}</span>
                         <div className="flex-1 mx-4">
                           <div className="flex gap-2">
@@ -130,17 +217,41 @@ export default function Progress() {
                 <CardContent>
                   <div className="space-y-4">
                     <div className="text-center">
-                      <div className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                      <div 
+                        className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4 cursor-pointer hover:bg-primary/20 transition-colors"
+                        onClick={() => {
+                          toast({
+                            title: "Productivity Score",
+                            description: "Great job! You're performing above average this month.",
+                          })
+                        }}
+                      >
                         <div className="text-3xl font-bold text-primary">85%</div>
                       </div>
                       <p className="text-sm text-muted-foreground">Overall Productivity Score</p>
                     </div>
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                      <div className="text-center">
+                      <div 
+                        className="text-center cursor-pointer hover:bg-muted/50 p-2 rounded transition-colors"
+                        onClick={() => {
+                          toast({
+                            title: "Task Completion",
+                            description: "Excellent task completion rate this week!",
+                          })
+                        }}
+                      >
                         <div className="text-2xl font-bold text-green-600">92%</div>
                         <p className="text-xs text-muted-foreground">Task Completion</p>
                       </div>
-                      <div className="text-center">
+                      <div 
+                        className="text-center cursor-pointer hover:bg-muted/50 p-2 rounded transition-colors"
+                        onClick={() => {
+                          toast({
+                            title: "Goal Achievement",
+                            description: "You're on track to meet your monthly goals!",
+                          })
+                        }}
+                      >
                         <div className="text-2xl font-bold text-blue-600">78%</div>
                         <p className="text-xs text-muted-foreground">Goal Achievement</p>
                       </div>
