@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,8 +45,8 @@ export default function Login() {
       navigate("/dashboard")
     } else {
       toast({
-        title: "Login Failed",
-        description: "Invalid username or password",
+        title: "Account Not Found",
+        description: "This account doesn't exist. Please sign up to create a new account.",
         variant: "destructive"
       })
     }

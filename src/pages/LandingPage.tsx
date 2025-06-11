@@ -58,7 +58,7 @@ export default function LandingPage() {
           <Link to="/login">
             <Button variant="ghost">Sign In</Button>
           </Link>
-          <Link to="/dashboard">
+          <Link to="/login">
             <Button>Get Started</Button>
           </Link>
         </div>
@@ -79,7 +79,7 @@ export default function LandingPage() {
               to supercharge your workflow.
             </p>
             <div className="flex items-center justify-center gap-4 mb-16">
-              <Link to="/dashboard">
+              <Link to="/login">
                 <Button size="lg" className="h-12 px-8 text-lg">
                   Get Started
                 </Button>
@@ -147,7 +147,7 @@ export default function LandingPage() {
           <p className="text-xl text-muted-foreground mb-12">
             Join thousands of users who have already boosted their productivity with SkillSync
           </p>
-          <Link to="/dashboard">
+          <Link to="/login">
             <Button size="lg" className="h-12 px-12 text-lg">
               Start Your Journey
             </Button>

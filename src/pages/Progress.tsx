@@ -6,11 +6,15 @@ import { TrendingUp, Target, Clock, Trophy, BarChart3, PieChart, Download, Refre
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { useState } from "react"
+import { useUser } from "@/contexts/UserContext"
+import { exportProgressToPDF } from "@/utils/progressPdfExport"
 
 export default function Progress() {
   const { toast } = useToast()
+  const { user } = useUser()
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
 
   const [progressStats, setProgressStats] = useState([
     { title: "Tasks Completed", value: "156", total: "200", percentage: 78, icon: Target },
@@ -32,17 +36,25 @@ export default function Progress() {
   const generateReport = async () => {
     setIsGeneratingReport(true)
     toast({
-      title: "Generating Report",
-      description: "Your detailed progress report is being generated...",
+      title: "Generating Detailed Report",
+      description: "Creating comprehensive progress analysis...",
     })
     
-    // Simulate report generation
+    // Simulate report generation with more detailed process
     setTimeout(() => {
       setIsGeneratingReport(false)
       toast({
-        title: "Report Ready!",
-        description: "Your progress report has been generated and is ready for download.",
+        title: "Advanced Report Generated!",
+        description: "Your detailed progress analysis is complete with insights and recommendations.",
       })
+      
+      // Show additional report details
+      setTimeout(() => {
+        toast({
+          title: "Report Features",
+          description: "Includes performance trends, achievement analysis, and personalized improvement suggestions.",
+        })
+      }, 1000)
     }, 3000)
   }
 
@@ -69,19 +81,46 @@ export default function Progress() {
     }, 2000)
   }
 
-  const exportData = () => {
+  const exportData = async () => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "User information not available",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsExporting(true)
     toast({
-      title: "Exporting Data",
-      description: "Your progress data is being exported to CSV format...",
+      title: "Preparing PDF Export",
+      description: "Generating your detailed progress report...",
     })
     
-    // Simulate data export
-    setTimeout(() => {
-      toast({
-        title: "Export Complete",
-        description: "Progress data exported successfully!",
+    try {
+      await exportProgressToPDF({
+        stats: progressStats,
+        weeklyData: weeklyData,
+        exportDate: new Date().toISOString(),
+        userInfo: {
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email
+        }
       })
-    }, 1500)
+      
+      setIsExporting(false)
+      toast({
+        title: "PDF Export Complete",
+        description: "Your detailed progress report has been downloaded successfully!",
+      })
+    } catch (error) {
+      setIsExporting(false)
+      toast({
+        title: "Export Failed",
+        description: "There was an error generating your PDF report",
+        variant: "destructive"
+      })
+    }
   }
 
   return (
@@ -112,9 +151,10 @@ export default function Progress() {
                   variant="outline" 
                   className="gap-2" 
                   onClick={exportData}
+                  disabled={isExporting}
                 >
                   <Download className="h-4 w-4" />
-                  Export
+                  {isExporting ? 'Exporting...' : 'Export PDF'}
                 </Button>
                 <Button 
                   className="gap-2" 

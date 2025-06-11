@@ -1,4 +1,3 @@
-
 import { useState } from "react"
 import { Header } from "@/components/Header"
 import { AppSidebar } from "@/components/AppSidebar"
@@ -12,6 +11,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Calendar, Clock, Plus, Filter, Edit, Trash2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
@@ -29,13 +34,13 @@ interface Task {
 export default function Tasks() {
   const [view, setView] = useState("list")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [showFilters, setShowFilters] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [newTaskTitle, setNewTaskTitle] = useState("")
   const [newTaskDescription, setNewTaskDescription] = useState("")
   const [newTaskPriority, setNewTaskPriority] = useState<"high" | "medium" | "low">("medium")
   const [newTaskDueDate, setNewTaskDueDate] = useState("")
   const [newTaskTags, setNewTaskTags] = useState("")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
   const { toast } = useToast()
   
   const [tasks, setTasks] = useState<Task[]>([
@@ -98,6 +103,28 @@ export default function Tasks() {
       case "low": return "text-muted-foreground bg-muted"
       default: return "text-muted-foreground bg-muted"
     }
+  }
+
+  // Sort tasks to put completed ones at the bottom
+  const getSortedTasks = () => {
+    return [...tasks].sort((a, b) => {
+      if (a.completed !== b.completed) {
+        return a.completed ? 1 : -1
+      }
+      return 0
+    })
+  }
+
+  // Filter tasks based on status
+  const getFilteredTasks = () => {
+    const sortedTasks = getSortedTasks()
+    if (statusFilter === "all") return sortedTasks
+    return sortedTasks.filter(task => {
+      if (statusFilter === "todo") return task.status === "todo"
+      if (statusFilter === "in-progress") return task.status === "in-progress"
+      if (statusFilter === "done") return task.status === "done"
+      return true
+    })
   }
 
   const toggleTaskCompletion = (taskId: number) => {
@@ -205,7 +232,7 @@ export default function Tasks() {
   }
 
   const TaskCard = ({ task }: { task: Task }) => (
-    <Card className="card-hover group">
+    <Card className={`card-hover group ${task.completed ? 'opacity-60' : ''}`}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-start gap-3 flex-1">
@@ -279,6 +306,8 @@ export default function Tasks() {
     </div>
   )
 
+  const filteredTasks = getFilteredTasks()
+
   return (
     <div className="flex h-screen bg-background">
       <AppSidebar />
@@ -295,20 +324,28 @@ export default function Tasks() {
               </div>
               
               <div className="flex items-center gap-4">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    setShowFilters(!showFilters)
-                    toast({
-                      title: "Filters",
-                      description: showFilters ? "Filters hidden" : "Filters shown",
-                    })
-                  }}
-                >
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filter
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Filter className="h-4 w-4 mr-2" />
+                      Filter: {statusFilter === "all" ? "All" : statusFilter === "todo" ? "To Do" : statusFilter === "in-progress" ? "In Progress" : "Done"}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => setStatusFilter("all")}>
+                      All Tasks
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter("todo")}>
+                      To Do
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter("in-progress")}>
+                      In Progress
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter("done")}>
+                      Done
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 
                 <Tabs value={view} onValueChange={setView} className="w-fit">
                   <TabsList>
@@ -321,18 +358,23 @@ export default function Tasks() {
 
             <Tabs value={view} className="w-full">
               <TabsContent value="list" className="space-y-4">
-                {tasks.map((task, index) => (
+                {filteredTasks.map((task, index) => (
                   <div key={task.id} className="animate-scale-in" style={{ animationDelay: `${index * 0.1}s` }}>
                     <TaskCard task={task} />
                   </div>
                 ))}
+                {filteredTasks.length === 0 && (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">No tasks found for the selected filter.</p>
+                  </div>
+                )}
               </TabsContent>
               
               <TabsContent value="kanban">
                 <div className="flex gap-6 h-[calc(100vh-200px)] overflow-x-auto">
-                  <KanbanColumn title="To Do" status="todo" tasks={tasks} />
-                  <KanbanColumn title="In Progress" status="in-progress" tasks={tasks} />
-                  <KanbanColumn title="Done" status="done" tasks={tasks} />
+                  <KanbanColumn title="To Do" status="todo" tasks={filteredTasks} />
+                  <KanbanColumn title="In Progress" status="in-progress" tasks={filteredTasks} />
+                  <KanbanColumn title="Done" status="done" tasks={filteredTasks} />
                 </div>
               </TabsContent>
             </Tabs>

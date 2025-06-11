@@ -33,10 +33,10 @@ export default function Dashboard() {
 
   const getAIInsights = () => {
     toast({
-      title: "AI Insights Generated",
-      description: "Your personalized productivity insights are ready!",
+      title: "Navigating to AI Insights",
+      description: "Opening AI Productivity Tips page...",
     })
-    console.log("AI insights requested")
+    navigate("/ai-tips")
   }
 
   const viewNote = (noteTitle: string) => {
