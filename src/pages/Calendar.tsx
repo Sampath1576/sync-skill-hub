@@ -12,16 +12,25 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 
+interface Event {
+  id: number;
+  title: string;
+  time: string;
+  date: string;
+  attendees: number;
+  description: string;
+}
+
 export default function Calendar() {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const { toast } = useToast()
-  const [events, setEvents] = useState([
+  const [events, setEvents] = useState<Event[]>([
     { id: 1, title: "Team Meeting", time: "10:00 AM", date: "Today", attendees: 5, description: "Weekly team standup" },
     { id: 2, title: "Project Review", time: "2:00 PM", date: "Today", attendees: 3, description: "Q3 project review" },
     { id: 3, title: "Client Call", time: "9:00 AM", date: "Tomorrow", attendees: 2, description: "Monthly client check-in" },
   ])
   const [isAddEventOpen, setIsAddEventOpen] = useState(false)
-  const [editingEvent, setEditingEvent] = useState<any>(null)
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [newEvent, setNewEvent] = useState({
     title: "",
     time: "",
@@ -29,6 +38,10 @@ export default function Calendar() {
     attendees: 1,
     description: ""
   })
+
+  const resetEventForm = () => {
+    setNewEvent({ title: "", time: "", date: "", attendees: 1, description: "" })
+  }
 
   const addEvent = () => {
     if (!newEvent.title.trim()) {
@@ -40,14 +53,14 @@ export default function Calendar() {
       return
     }
 
-    const event = {
+    const event: Event = {
       id: Date.now(),
       ...newEvent,
       attendees: Number(newEvent.attendees)
     }
 
-    setEvents([...events, event])
-    setNewEvent({ title: "", time: "", date: "", attendees: 1, description: "" })
+    setEvents(prev => [...prev, event])
+    resetEventForm()
     setIsAddEventOpen(false)
     
     toast({
@@ -56,7 +69,7 @@ export default function Calendar() {
     })
   }
 
-  const editEvent = (event: any) => {
+  const editEvent = (event: Event) => {
     setEditingEvent(event)
     setNewEvent({
       title: event.title,
@@ -77,14 +90,16 @@ export default function Calendar() {
       return
     }
 
-    setEvents(events.map(event => 
+    if (!editingEvent) return
+
+    setEvents(prev => prev.map(event => 
       event.id === editingEvent.id 
         ? { ...event, ...newEvent, attendees: Number(newEvent.attendees) }
         : event
     ))
     
     setEditingEvent(null)
-    setNewEvent({ title: "", time: "", date: "", attendees: 1, description: "" })
+    resetEventForm()
     
     toast({
       title: "Event Updated",
@@ -93,15 +108,23 @@ export default function Calendar() {
   }
 
   const deleteEvent = (eventId: number) => {
-    setEvents(events.filter(event => event.id !== eventId))
+    setEvents(prev => prev.filter(event => event.id !== eventId))
     toast({
       title: "Event Deleted",
       description: "Event has been removed from your calendar",
     })
   }
 
+  const closeEditDialog = () => {
+    setEditingEvent(null)
+    resetEventForm()
+  }
+
   const EventDialog = ({ trigger, isEdit = false }: { trigger: React.ReactNode, isEdit?: boolean }) => (
-    <Dialog open={isEdit ? !!editingEvent : isAddEventOpen} onOpenChange={isEdit ? () => setEditingEvent(null) : setIsAddEventOpen}>
+    <Dialog 
+      open={isEdit ? !!editingEvent : isAddEventOpen} 
+      onOpenChange={isEdit ? closeEditDialog : setIsAddEventOpen}
+    >
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>

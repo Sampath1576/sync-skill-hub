@@ -2,7 +2,7 @@
 import { Header } from "@/components/Header"
 import { AppSidebar } from "@/components/AppSidebar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Settings as SettingsIcon, User, Bell, Shield, Palette, Download, Upload, Camera } from "lucide-react"
+import { Settings as SettingsIcon, User, Bell, Shield, Download, Upload, Camera } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,21 +10,27 @@ import { Switch } from "@/components/ui/switch"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useState, useRef } from "react"
 import { useToast } from "@/hooks/use-toast"
+import { useUser } from "@/contexts/UserContext"
+import { exportToPDF } from "@/utils/pdfExport"
 
 export default function Settings() {
   const { toast } = useToast()
+  const { user, updateProfile, updatePassword, validatePassword } = useUser()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [avatar, setAvatar] = useState("/placeholder.svg")
+  
   const [profileData, setProfileData] = useState({
-    firstName: "John",
-    lastName: "Doe",
-    email: "john@example.com"
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
+    email: user?.email || "",
+    username: user?.username || ""
   })
+  
   const [passwordData, setPasswordData] = useState({
     current: "",
     new: "",
     confirm: ""
   })
+  
   const [notifications, setNotifications] = useState({
     email: true,
     push: false,
@@ -46,7 +52,8 @@ export default function Settings() {
 
       const reader = new FileReader()
       reader.onload = (e) => {
-        setAvatar(e.target?.result as string)
+        const avatarUrl = e.target?.result as string
+        updateProfile({ avatar: avatarUrl })
         toast({
           title: "Avatar Updated",
           description: "Your profile picture has been updated successfully",
@@ -57,7 +64,7 @@ export default function Settings() {
   }
 
   const saveProfile = () => {
-    if (!profileData.firstName.trim() || !profileData.lastName.trim() || !profileData.email.trim()) {
+    if (!profileData.firstName.trim() || !profileData.lastName.trim() || !profileData.email.trim() || !profileData.username.trim()) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields",
@@ -66,18 +73,27 @@ export default function Settings() {
       return
     }
 
+    updateProfile(profileData)
     toast({
       title: "Profile Updated",
       description: "Your profile changes have been saved successfully",
     })
-    console.log("Profile saved:", profileData)
   }
 
-  const updatePassword = () => {
+  const handlePasswordUpdate = () => {
     if (!passwordData.current || !passwordData.new || !passwordData.confirm) {
       toast({
         title: "Validation Error",
         description: "Please fill in all password fields",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (!validatePassword(passwordData.current)) {
+      toast({
+        title: "Incorrect Password",
+        description: "Current password is incorrect",
         variant: "destructive"
       })
       return
@@ -101,40 +117,47 @@ export default function Settings() {
       return
     }
 
-    setPasswordData({ current: "", new: "", confirm: "" })
-    toast({
-      title: "Password Updated",
-      description: "Your password has been changed successfully",
-    })
+    const success = updatePassword(passwordData.current, passwordData.new)
+    if (success) {
+      setPasswordData({ current: "", new: "", confirm: "" })
+      toast({
+        title: "Password Updated",
+        description: "Your password has been changed successfully",
+      })
+    }
   }
 
-  const exportData = () => {
+  const exportData = async () => {
+    if (!user) return
+
     toast({
       title: "Data Export Started",
       description: "Your data export will be ready shortly",
     })
     
-    // Simulate export process
-    setTimeout(() => {
-      const dataStr = JSON.stringify({
-        profile: profileData,
+    try {
+      await exportToPDF({
+        profile: {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          username: user.username
+        },
         settings: notifications,
         exportDate: new Date().toISOString()
-      }, null, 2)
-      
-      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr)
-      const exportFileDefaultName = 'skillsync-data.json'
-      
-      const linkElement = document.createElement('a')
-      linkElement.setAttribute('href', dataUri)
-      linkElement.setAttribute('download', exportFileDefaultName)
-      linkElement.click()
+      })
       
       toast({
         title: "Export Complete",
         description: "Your data has been downloaded successfully",
       })
-    }, 2000)
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting your data",
+        variant: "destructive"
+      })
+    }
   }
 
   const deleteAccount = () => {
@@ -184,9 +207,9 @@ export default function Settings() {
                 <CardContent className="space-y-6">
                   <div className="flex items-center gap-6">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={avatar} alt="Profile" />
+                      <AvatarImage src={user?.avatar} alt="Profile" />
                       <AvatarFallback className="text-lg">
-                        {profileData.firstName[0]}{profileData.lastName[0]}
+                        {user?.firstName?.[0]}{user?.lastName?.[0]}
                       </AvatarFallback>
                     </Avatar>
                     <div className="space-y-2">
@@ -206,27 +229,6 @@ export default function Settings() {
                           <Upload className="h-4 w-4" />
                           Upload Photo
                         </Button>
-                        <Button 
-                          variant="outline" 
-                          onClick={() => {
-                            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                              toast({
-                                title: "Camera Access",
-                                description: "Camera functionality would open here",
-                              })
-                            } else {
-                              toast({
-                                title: "Camera Not Available",
-                                description: "Camera access is not available on this device",
-                                variant: "destructive"
-                              })
-                            }
-                          }}
-                          className="gap-2"
-                        >
-                          <Camera className="h-4 w-4" />
-                          Take Photo
-                        </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
                         JPG, PNG or GIF (max. 5MB)
@@ -234,6 +236,26 @@ export default function Settings() {
                     </div>
                   </div>
                   
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="username">Username</Label>
+                      <Input 
+                        id="username" 
+                        value={profileData.username}
+                        onChange={(e) => setProfileData({...profileData, username: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        value={profileData.email}
+                        onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">First Name</Label>
@@ -251,16 +273,6 @@ export default function Settings() {
                         onChange={(e) => setProfileData({...profileData, lastName: e.target.value})}
                       />
                     </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      value={profileData.email}
-                      onChange={(e) => setProfileData({...profileData, email: e.target.value})}
-                    />
                   </div>
                   
                   <Button onClick={saveProfile}>Save Changes</Button>
@@ -365,7 +377,7 @@ export default function Settings() {
                     />
                   </div>
                   
-                  <Button variant="outline" onClick={updatePassword}>Update Password</Button>
+                  <Button variant="outline" onClick={handlePasswordUpdate}>Update Password</Button>
                 </CardContent>
               </Card>
 
@@ -381,11 +393,11 @@ export default function Settings() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="font-medium">Export Your Data</h4>
-                      <p className="text-sm text-muted-foreground">Download a copy of all your data</p>
+                      <p className="text-sm text-muted-foreground">Download a copy of all your data as PDF</p>
                     </div>
                     <Button variant="outline" onClick={exportData} className="gap-2">
                       <Download className="h-4 w-4" />
-                      Export
+                      Export PDF
                     </Button>
                   </div>
                   

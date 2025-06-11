@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { SearchProvider } from "@/contexts/SearchContext";
+import { UserProvider } from "@/contexts/UserContext";
 import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import Notes from "./pages/Notes";
@@ -22,27 +23,29 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="light" storageKey="skillsync-ui-theme">
-      <SearchProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/notes" element={<Notes />} />
-              <Route path="/tasks" element={<Tasks />} />
-              <Route path="/calendar" element={<Calendar />} />
-              <Route path="/progress" element={<Progress />} />
-              <Route path="/ai-tips" element={<AITips />} />
-              <Route path="/settings" element={<Settings />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </SearchProvider>
+      <UserProvider>
+        <SearchProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/notes" element={<Notes />} />
+                <Route path="/tasks" element={<Tasks />} />
+                <Route path="/calendar" element={<Calendar />} />
+                <Route path="/progress" element={<Progress />} />
+                <Route path="/ai-tips" element={<AITips />} />
+                <Route path="/settings" element={<Settings />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </SearchProvider>
+      </UserProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

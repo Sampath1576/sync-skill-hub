@@ -1,4 +1,3 @@
-
 import { Header } from "@/components/Header"
 import { AppSidebar } from "@/components/AppSidebar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -6,10 +5,12 @@ import { FileText, CheckSquare, Calendar, Brain, TrendingUp, Clock } from "lucid
 import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
+import { useUser } from "@/contexts/UserContext"
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { user } = useUser()
 
   const stats = [
     { title: "Notes Created", value: "24", icon: FileText, change: "+12%" },
@@ -81,7 +82,9 @@ export default function Dashboard() {
           <div className="animate-fade-in">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h1 className="text-3xl font-bold">Welcome back, John!</h1>
+                <h1 className="text-3xl font-bold">
+                  Welcome back, {user?.firstName || 'User'}!
+                </h1>
                 <p className="text-muted-foreground mt-1">Here's what's happening with your productivity today.</p>
               </div>
               <Button className="gap-2" onClick={getAIInsights}>
