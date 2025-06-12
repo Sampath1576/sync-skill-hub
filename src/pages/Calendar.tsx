@@ -24,6 +24,10 @@ export default function Calendar() {
     setEditingEvent(null)
   }
 
+  const handleOpenAddDialog = () => {
+    setIsAddEventOpen(true)
+  }
+
   const handleCloseAddDialog = () => {
     setIsAddEventOpen(false)
   }
@@ -42,18 +46,10 @@ export default function Calendar() {
                 <h1 className="text-3xl font-bold">Calendar</h1>
                 <p className="text-muted-foreground mt-1">Manage your schedule and events</p>
               </div>
-              <EventForm
-                trigger={
-                  <Button className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add Event
-                  </Button>
-                }
-                onAddEvent={addEvent}
-                onUpdateEvent={updateEvent}
-                onClose={handleCloseAddDialog}
-                isOpen={isAddEventOpen}
-              />
+              <Button className="gap-2" onClick={handleOpenAddDialog}>
+                <Plus className="h-4 w-4" />
+                Add Event
+              </Button>
             </div>
 
             <div className="grid lg:grid-cols-3 gap-6">
@@ -64,6 +60,14 @@ export default function Calendar() {
                 onDeleteEvent={deleteEvent}
               />
             </div>
+
+            <EventForm
+              trigger={<div />}
+              onAddEvent={addEvent}
+              onUpdateEvent={updateEvent}
+              onClose={handleCloseAddDialog}
+              isOpen={isAddEventOpen}
+            />
 
             {editingEvent && (
               <EventForm
