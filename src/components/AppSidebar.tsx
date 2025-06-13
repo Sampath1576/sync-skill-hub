@@ -10,7 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -26,8 +26,19 @@ const navigation = [
 ]
 
 export function AppSidebar() {
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebar-collapsed')
+    return saved ? JSON.parse(saved) : false
+  })
   const location = useLocation()
+
+  useEffect(() => {
+    localStorage.setItem('sidebar-collapsed', JSON.stringify(collapsed))
+  }, [collapsed])
+
+  const toggleCollapsed = () => {
+    setCollapsed(!collapsed)
+  }
 
   return (
     <div className={cn(
@@ -48,7 +59,7 @@ export function AppSidebar() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={toggleCollapsed}
             className="h-8 w-8 p-0"
           >
             {collapsed ? (

@@ -1,3 +1,4 @@
+
 import { useState } from "react"
 import { Header } from "@/components/Header"
 import { AppSidebar } from "@/components/AppSidebar"
@@ -7,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -17,84 +18,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Calendar, Clock, Plus, Filter, Edit, Trash2 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-
-interface Task {
-  id: number
-  title: string
-  description: string
-  status: "todo" | "in-progress" | "done"
-  priority: "high" | "medium" | "low"
-  dueDate: string
-  tags: string[]
-  completed: boolean
-}
+import { Calendar, Plus, Filter, Edit, Trash2 } from "lucide-react"
+import { useSupabaseTasks } from "@/hooks/useSupabaseTasks"
 
 export default function Tasks() {
   const [view, setView] = useState("list")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [editingTask, setEditingTask] = useState<any>(null)
   const [newTaskTitle, setNewTaskTitle] = useState("")
   const [newTaskDescription, setNewTaskDescription] = useState("")
   const [newTaskPriority, setNewTaskPriority] = useState<"high" | "medium" | "low">("medium")
   const [newTaskDueDate, setNewTaskDueDate] = useState("")
-  const [newTaskTags, setNewTaskTags] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
-  const { toast } = useToast()
   
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: 1,
-      title: "Complete React assignment",
-      description: "Build a todo app with React hooks and context",
-      status: "todo",
-      priority: "high",
-      dueDate: "Today",
-      tags: ["coding", "react"],
-      completed: false
-    },
-    {
-      id: 2,
-      title: "Review meeting notes",
-      description: "Go through the weekly team meeting notes and extract action items",
-      status: "in-progress",
-      priority: "medium",
-      dueDate: "Tomorrow",
-      tags: ["meeting", "review"],
-      completed: false
-    },
-    {
-      id: 3,
-      title: "Update portfolio website",
-      description: "Add recent projects and update the design",
-      status: "todo",
-      priority: "low",
-      dueDate: "This week",
-      tags: ["portfolio", "design"],
-      completed: false
-    },
-    {
-      id: 4,
-      title: "Study machine learning",
-      description: "Complete chapter 3 of the ML course",
-      status: "in-progress",
-      priority: "high",
-      dueDate: "Friday",
-      tags: ["study", "ml"],
-      completed: false
-    },
-    {
-      id: 5,
-      title: "Write blog post",
-      description: "Article about React best practices",
-      status: "done",
-      priority: "medium",
-      dueDate: "Last week",
-      tags: ["writing", "react"],
-      completed: true
-    }
-  ])
+  const { tasks, isLoading, createTask, updateTask, deleteTask, toggleTaskCompletion } = useSupabaseTasks()
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -120,97 +57,39 @@ export default function Tasks() {
     const sortedTasks = getSortedTasks()
     if (statusFilter === "all") return sortedTasks
     return sortedTasks.filter(task => {
-      if (statusFilter === "todo") return task.status === "todo"
-      if (statusFilter === "in-progress") return task.status === "in-progress"
-      if (statusFilter === "done") return task.status === "done"
+      if (statusFilter === "completed") return task.completed
+      if (statusFilter === "pending") return !task.completed
       return true
     })
   }
 
-  const toggleTaskCompletion = (taskId: number) => {
-    setTasks(prev => prev.map(task => {
-      if (task.id === taskId) {
-        const newStatus = task.completed ? "todo" : "done"
-        const updatedTask = { 
-          ...task, 
-          completed: !task.completed,
-          status: newStatus as "todo" | "in-progress" | "done"
-        }
-        toast({
-          title: updatedTask.completed ? "Task completed!" : "Task reopened",
-          description: `"${task.title}" marked as ${updatedTask.completed ? "complete" : "incomplete"}`,
-        })
-        return updatedTask
-      }
-      return task
-    }))
-  }
-
-  const editTask = (task: Task) => {
+  const editTask = (task: any) => {
     setEditingTask(task)
     setNewTaskTitle(task.title)
     setNewTaskDescription(task.description)
     setNewTaskPriority(task.priority)
-    setNewTaskDueDate(task.dueDate)
-    setNewTaskTags(task.tags.join(", "))
+    setNewTaskDueDate(task.due_date ? task.due_date.split('T')[0] : "")
     setIsDialogOpen(true)
   }
 
-  const deleteTask = (taskId: number) => {
-    const task = tasks.find(t => t.id === taskId)
-    setTasks(prev => prev.filter(task => task.id !== taskId))
-    toast({
-      title: "Task deleted",
-      description: `"${task?.title}" has been deleted`,
-      variant: "destructive"
-    })
+  const handleDeleteTask = (taskId: string) => {
+    deleteTask(taskId)
   }
 
-  const saveTask = () => {
-    if (!newTaskTitle.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a task title",
-        variant: "destructive"
-      })
-      return
-    }
+  const saveTask = async () => {
+    if (!newTaskTitle.trim()) return
 
-    const tags = newTaskTags.split(",").map(tag => tag.trim()).filter(tag => tag)
+    const taskData = {
+      title: newTaskTitle,
+      description: newTaskDescription,
+      priority: newTaskPriority,
+      due_date: newTaskDueDate ? new Date(newTaskDueDate).toISOString() : undefined
+    }
     
     if (editingTask) {
-      setTasks(prev => prev.map(task => 
-        task.id === editingTask.id 
-          ? { 
-              ...task, 
-              title: newTaskTitle, 
-              description: newTaskDescription, 
-              priority: newTaskPriority,
-              dueDate: newTaskDueDate,
-              tags 
-            }
-          : task
-      ))
-      toast({
-        title: "Task updated",
-        description: `"${newTaskTitle}" has been updated`,
-      })
+      await updateTask(editingTask.id, taskData)
     } else {
-      const newTask: Task = {
-        id: Math.max(...tasks.map(t => t.id)) + 1,
-        title: newTaskTitle,
-        description: newTaskDescription,
-        status: "todo",
-        priority: newTaskPriority,
-        dueDate: newTaskDueDate,
-        tags,
-        completed: false
-      }
-      setTasks(prev => [newTask, ...prev])
-      toast({
-        title: "Task created",
-        description: `"${newTaskTitle}" has been created`,
-      })
+      await createTask(taskData)
     }
 
     setIsDialogOpen(false)
@@ -222,7 +101,6 @@ export default function Tasks() {
     setNewTaskDescription("")
     setNewTaskPriority("medium")
     setNewTaskDueDate("")
-    setNewTaskTags("")
     setEditingTask(null)
   }
 
@@ -231,7 +109,7 @@ export default function Tasks() {
     setIsDialogOpen(true)
   }
 
-  const TaskCard = ({ task }: { task: Task }) => (
+  const TaskCard = ({ task }: { task: any }) => (
     <Card className={`card-hover group ${task.completed ? 'opacity-60' : ''}`}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
@@ -261,7 +139,7 @@ export default function Tasks() {
               variant="ghost" 
               size="sm" 
               className="h-8 w-8 p-0 text-destructive"
-              onClick={() => deleteTask(task.id)}
+              onClick={() => handleDeleteTask(task.id)}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -273,31 +151,26 @@ export default function Tasks() {
             <Badge className={getPriorityColor(task.priority)}>
               {task.priority}
             </Badge>
-            {task.tags.map((tag) => (
-              <Badge key={tag} variant="outline" className="text-xs">
-                {tag}
-              </Badge>
-            ))}
           </div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Calendar className="h-3 w-3" />
-            {task.dueDate}
+            {task.due_date ? new Date(task.due_date).toLocaleDateString() : "No due date"}
           </div>
         </div>
       </CardContent>
     </Card>
   )
 
-  const KanbanColumn = ({ title, status, tasks }: { title: string, status: string, tasks: Task[] }) => (
+  const KanbanColumn = ({ title, status, tasks }: { title: string, status: string, tasks: any[] }) => (
     <div className="flex-1">
       <div className="bg-muted rounded-lg p-4">
         <h3 className="font-semibold mb-4 flex items-center justify-between">
           {title}
-          <Badge variant="secondary">{tasks.filter(t => t.status === status).length}</Badge>
+          <Badge variant="secondary">{tasks.filter(t => status === "completed" ? t.completed : !t.completed).length}</Badge>
         </h3>
         <div className="space-y-3">
           {tasks
-            .filter(task => task.status === status)
+            .filter(task => status === "completed" ? task.completed : !task.completed)
             .map((task) => (
               <TaskCard key={task.id} task={task} />
             ))}
@@ -307,6 +180,27 @@ export default function Tasks() {
   )
 
   const filteredTasks = getFilteredTasks()
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen bg-background">
+        <AppSidebar />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Header />
+          <main className="flex-1 overflow-y-auto p-6">
+            <div className="animate-pulse">
+              <div className="h-8 bg-muted rounded w-48 mb-4"></div>
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-24 bg-muted rounded"></div>
+                ))}
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-screen bg-background">
@@ -328,21 +222,18 @@ export default function Tasks() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm">
                       <Filter className="h-4 w-4 mr-2" />
-                      Filter: {statusFilter === "all" ? "All" : statusFilter === "todo" ? "To Do" : statusFilter === "in-progress" ? "In Progress" : "Done"}
+                      Filter: {statusFilter === "all" ? "All" : statusFilter === "completed" ? "Completed" : "Pending"}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuItem onClick={() => setStatusFilter("all")}>
                       All Tasks
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setStatusFilter("todo")}>
-                      To Do
+                    <DropdownMenuItem onClick={() => setStatusFilter("pending")}>
+                      Pending
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setStatusFilter("in-progress")}>
-                      In Progress
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setStatusFilter("done")}>
-                      Done
+                    <DropdownMenuItem onClick={() => setStatusFilter("completed")}>
+                      Completed
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -372,9 +263,8 @@ export default function Tasks() {
               
               <TabsContent value="kanban">
                 <div className="flex gap-6 h-[calc(100vh-200px)] overflow-x-auto">
-                  <KanbanColumn title="To Do" status="todo" tasks={filteredTasks} />
-                  <KanbanColumn title="In Progress" status="in-progress" tasks={filteredTasks} />
-                  <KanbanColumn title="Done" status="done" tasks={filteredTasks} />
+                  <KanbanColumn title="Pending" status="pending" tasks={filteredTasks} />
+                  <KanbanColumn title="Completed" status="completed" tasks={filteredTasks} />
                 </div>
               </TabsContent>
             </Tabs>
@@ -415,11 +305,6 @@ export default function Tasks() {
                 onChange={(e) => setNewTaskDueDate(e.target.value)}
               />
             </div>
-            <Input 
-              placeholder="Add tags (comma separated)..." 
-              value={newTaskTags}
-              onChange={(e) => setNewTaskTags(e.target.value)}
-            />
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancel
