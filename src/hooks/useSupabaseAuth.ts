@@ -8,13 +8,12 @@ export function useSupabaseAuth() {
 
   useEffect(() => {
     if (isLoaded && user) {
-      // Set the auth token for Supabase
-      const token = user.id // Using Clerk user ID as the auth token
-      supabase.auth.setSession({
-        access_token: token,
-        refresh_token: token,
+      // Create a basic session object for Supabase
+      const sessionData = {
+        access_token: user.id,
+        refresh_token: user.id,
         expires_in: 3600,
-        token_type: 'bearer',
+        token_type: 'bearer' as const,
         user: {
           id: user.id,
           email: user.primaryEmailAddress?.emailAddress || '',
@@ -24,7 +23,10 @@ export function useSupabaseAuth() {
             username: user.username
           }
         }
-      } as any)
+      }
+
+      // Set auth session manually
+      supabase.auth.setSession(sessionData as any)
     }
   }, [user, isLoaded])
 

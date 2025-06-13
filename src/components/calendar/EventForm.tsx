@@ -6,14 +6,34 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { Event } from "@/types/calendar"
+
+interface Event {
+  id: string
+  title: string
+  description: string
+  event_date: string
+  event_time: string
+  attendees: number
+}
 
 interface EventFormProps {
   trigger: React.ReactNode
   isEdit?: boolean
   editingEvent?: Event | null
-  onAddEvent: (event: Omit<Event, 'id'>) => void
-  onUpdateEvent: (eventId: number, event: Omit<Event, 'id'>) => void
+  onAddEvent: (event: {
+    title: string
+    description: string
+    event_date: string
+    event_time: string
+    attendees: number
+  }) => void
+  onUpdateEvent: (eventId: string, event: {
+    title: string
+    description: string
+    event_date: string
+    event_time: string
+    attendees: number
+  }) => void
   onClose: () => void
   isOpen: boolean
 }
@@ -30,14 +50,14 @@ export function EventForm({
   const { toast } = useToast()
   const [formData, setFormData] = useState({
     title: editingEvent?.title || "",
-    time: editingEvent?.time || "",
-    date: editingEvent?.date || "",
+    event_time: editingEvent?.event_time || "",
+    event_date: editingEvent?.event_date || "",
     attendees: editingEvent?.attendees || 1,
     description: editingEvent?.description || ""
   })
 
   const resetForm = () => {
-    setFormData({ title: "", time: "", date: "", attendees: 1, description: "" })
+    setFormData({ title: "", event_time: "", event_date: "", attendees: 1, description: "" })
   }
 
   const handleSubmit = () => {
@@ -86,21 +106,21 @@ export function EventForm({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="time">Time</Label>
+              <Label htmlFor="event_time">Time</Label>
               <Input
-                id="time"
-                value={formData.time}
-                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                placeholder="e.g., 10:00 AM"
+                id="event_time"
+                type="time"
+                value={formData.event_time}
+                onChange={(e) => setFormData({ ...formData, event_time: e.target.value })}
               />
             </div>
             <div>
-              <Label htmlFor="date">Date</Label>
+              <Label htmlFor="event_date">Date</Label>
               <Input
-                id="date"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                placeholder="e.g., Today"
+                id="event_date"
+                type="date"
+                value={formData.event_date}
+                onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
               />
             </div>
           </div>
