@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ThemeToggle } from "./ThemeToggle"
 import { useGlobalSearch } from "@/hooks/useGlobalSearch"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useClerk, useUser } from "@clerk/clerk-react"
 
@@ -38,11 +38,19 @@ const mockNotifications = [
 ]
 
 export function Header() {
-  const { searchQuery, setSearchQuery, searchResults, isSearching } = useGlobalSearch()
+  const [searchQuery, setSearchQuery] = useState("")
+  const { search, results, isLoading } = useGlobalSearch()
   const [isNotificationOpen, setIsNotificationOpen] = useState(false)
   const navigate = useNavigate()
   const { signOut } = useClerk()
   const { user } = useUser()
+
+  // Perform search when query changes
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      search(searchQuery)
+    }
+  }, [searchQuery, search])
 
   const handleSignOut = () => {
     signOut(() => navigate("/"))
@@ -61,6 +69,11 @@ export function Header() {
     }
   }
 
+  const handleSearchResultClick = (result: any) => {
+    navigate(result.url)
+    setSearchQuery("")
+  }
+
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
       <div className="flex h-16 items-center justify-between px-6">
@@ -74,26 +87,23 @@ export function Header() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 w-full"
             />
-            {isSearching && (
+            {isLoading && (
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
               </div>
             )}
             
             {/* Search Results */}
-            {searchQuery && searchResults.length > 0 && (
+            {searchQuery && results.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-md shadow-lg z-50 max-h-80 overflow-y-auto">
-                {searchResults.map((result, index) => (
+                {results.map((result) => (
                   <div
-                    key={index}
+                    key={result.id}
                     className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
-                    onClick={() => {
-                      navigate(result.path)
-                      setSearchQuery("")
-                    }}
+                    onClick={() => handleSearchResultClick(result)}
                   >
                     <div className="font-medium text-sm">{result.title}</div>
-                    <div className="text-xs text-muted-foreground">{result.type} • {result.path}</div>
+                    <div className="text-xs text-muted-foreground">{result.type} • {result.url}</div>
                   </div>
                 ))}
               </div>
