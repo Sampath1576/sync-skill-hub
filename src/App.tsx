@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { SearchProvider } from "@/contexts/SearchContext";
 import { UserProvider } from "@/contexts/UserContext";
+import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import Notes from "./pages/Notes";
@@ -31,15 +32,51 @@ const App = () => (
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/notes" element={<Notes />} />
-                <Route path="/tasks" element={<Tasks />} />
-                <Route path="/calendar" element={<Calendar />} />
-                <Route path="/progress" element={<Progress />} />
-                <Route path="/ai-tips" element={<AITips />} />
-                <Route path="/settings" element={<Settings />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="/login" element={
+                  <>
+                    <SignedOut>
+                      <Login />
+                    </SignedOut>
+                    <SignedIn>
+                      <Dashboard />
+                    </SignedIn>
+                  </>
+                } />
+                <Route path="/dashboard" element={
+                  <SignedIn>
+                    <Dashboard />
+                  </SignedIn>
+                } />
+                <Route path="/notes" element={
+                  <SignedIn>
+                    <Notes />
+                  </SignedIn>
+                } />
+                <Route path="/tasks" element={
+                  <SignedIn>
+                    <Tasks />
+                  </SignedIn>
+                } />
+                <Route path="/calendar" element={
+                  <SignedIn>
+                    <Calendar />
+                  </SignedIn>
+                } />
+                <Route path="/progress" element={
+                  <SignedIn>
+                    <Progress />
+                  </SignedIn>
+                } />
+                <Route path="/ai-tips" element={
+                  <SignedIn>
+                    <AITips />
+                  </SignedIn>
+                } />
+                <Route path="/settings" element={
+                  <SignedIn>
+                    <Settings />
+                  </SignedIn>
+                } />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

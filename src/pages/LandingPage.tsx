@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Link } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
+import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react"
 
 export default function LandingPage() {
   const { toast } = useToast()
@@ -55,12 +56,20 @@ export default function LandingPage() {
           <span className="font-semibold text-xl">SkillSync</span>
         </div>
         <div className="flex items-center gap-4">
-          <Link to="/login">
-            <Button variant="ghost">Sign In</Button>
-          </Link>
-          <Link to="/login">
-            <Button>Get Started</Button>
-          </Link>
+          <SignedOut>
+            <Link to="/login">
+              <Button variant="ghost">Sign In</Button>
+            </Link>
+            <Link to="/login">
+              <Button>Get Started</Button>
+            </Link>
+          </SignedOut>
+          <SignedIn>
+            <Link to="/dashboard">
+              <Button variant="ghost">Dashboard</Button>
+            </Link>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
         </div>
       </nav>
 
@@ -79,11 +88,20 @@ export default function LandingPage() {
               to supercharge your workflow.
             </p>
             <div className="flex items-center justify-center gap-4 mb-16">
-              <Link to="/login">
-                <Button size="lg" className="h-12 px-8 text-lg">
-                  Get Started
-                </Button>
-              </Link>
+              <SignedOut>
+                <Link to="/login">
+                  <Button size="lg" className="h-12 px-8 text-lg">
+                    Get Started
+                  </Button>
+                </Link>
+              </SignedOut>
+              <SignedIn>
+                <Link to="/dashboard">
+                  <Button size="lg" className="h-12 px-8 text-lg">
+                    Go to Dashboard
+                  </Button>
+                </Link>
+              </SignedIn>
               <Button variant="outline" size="lg" className="h-12 px-8 text-lg" onClick={exploreFeatures}>
                 Explore Features
               </Button>
@@ -147,11 +165,20 @@ export default function LandingPage() {
           <p className="text-xl text-muted-foreground mb-12">
             Join thousands of users who have already boosted their productivity with SkillSync
           </p>
-          <Link to="/login">
-            <Button size="lg" className="h-12 px-12 text-lg">
-              Start Your Journey
-            </Button>
-          </Link>
+          <SignedOut>
+            <Link to="/login">
+              <Button size="lg" className="h-12 px-12 text-lg">
+                Start Your Journey
+              </Button>
+            </Link>
+          </SignedOut>
+          <SignedIn>
+            <Link to="/dashboard">
+              <Button size="lg" className="h-12 px-12 text-lg">
+                Continue Your Journey
+              </Button>
+            </Link>
+          </SignedIn>
         </div>
       </section>
 

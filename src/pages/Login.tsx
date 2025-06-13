@@ -1,235 +1,89 @@
-import { Link, useNavigate } from "react-router-dom"
+
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { useState } from "react"
-import { useUser } from "@/contexts/UserContext"
 import { useToast } from "@/hooks/use-toast"
+import { Link } from "react-router-dom"
+import { Eye, EyeOff, ArrowLeft } from "lucide-react"
+import { SignIn, SignUp } from "@clerk/clerk-react"
 
 export default function Login() {
-  const [credentials, setCredentials] = useState({
-    username: "",
-    password: ""
-  })
-  const [isLogin, setIsLogin] = useState(true)
-  const [registerData, setRegisterData] = useState({
-    username: "",
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: ""
-  })
-
-  const { login, register } = useUser()
-  const navigate = useNavigate()
+  const [isSignUp, setIsSignUp] = useState(false)
   const { toast } = useToast()
 
-  const handleLogin = () => {
-    if (!credentials.username || !credentials.password) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive"
-      })
-      return
-    }
-
-    const success = login(credentials)
-    if (success) {
-      toast({
-        title: "Login Successful",
-        description: "Welcome back!",
-      })
-      navigate("/dashboard")
-    } else {
-      toast({
-        title: "Account Not Found",
-        description: "This account doesn't exist. Please sign up to create a new account.",
-        variant: "destructive"
-      })
-    }
-  }
-
-  const handleRegister = () => {
-    if (!registerData.username || !registerData.firstName || !registerData.lastName || !registerData.email || !registerData.password) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive"
-      })
-      return
-    }
-
-    register(registerData)
-    toast({
-      title: "Registration Successful",
-      description: "Please login with your new account",
-    })
-    setIsLogin(true)
-    setRegisterData({
-      username: "",
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: ""
-    })
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md animate-fade-in">
-        <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4">
-            <span className="text-primary-foreground font-bold text-xl">S</span>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <Link 
+            to="/"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Home
+          </Link>
+          
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-sm">S</span>
+            </div>
+            <span className="font-semibold text-xl">SkillSync</span>
           </div>
-          <h1 className="text-2xl font-bold">Welcome to SkillSync</h1>
+          
+          <h1 className="text-2xl font-bold">
+            {isSignUp ? "Create your account" : "Welcome back"}
+          </h1>
           <p className="text-muted-foreground">
-            {isLogin ? "Sign in to your account to continue" : "Create a new account to get started"}
+            {isSignUp 
+              ? "Sign up to start boosting your productivity" 
+              : "Sign in to your account to continue"
+            }
           </p>
         </div>
 
+        {/* Clerk Auth Components */}
         <Card>
-          <CardHeader>
-            <CardTitle>{isLogin ? "Sign In" : "Sign Up"}</CardTitle>
-            <CardDescription>
-              {isLogin 
-                ? "Enter your username/email and password to access your account"
-                : "Create your SkillSync account"
-              }
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {isLogin ? (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username or Email</Label>
-                  <Input 
-                    id="username" 
-                    type="text" 
-                    placeholder="Enter your username or email"
-                    value={credentials.username}
-                    onChange={(e) => setCredentials({...credentials, username: e.target.value})}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input 
-                    id="password" 
-                    type="password" 
-                    placeholder="Enter your password"
-                    value={credentials.password}
-                    onChange={(e) => setCredentials({...credentials, password: e.target.value})}
-                    required
-                  />
-                </div>
-
-                <Button className="w-full" onClick={handleLogin}>
-                  Sign In
-                </Button>
-              </>
+          <CardContent className="p-6">
+            {isSignUp ? (
+              <SignUp 
+                fallbackRedirectUrl="/dashboard"
+                appearance={{
+                  elements: {
+                    rootBox: "mx-auto",
+                    card: "shadow-none border-0 bg-transparent",
+                  }
+                }}
+              />
             ) : (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="reg-username">Username</Label>
-                  <Input 
-                    id="reg-username" 
-                    type="text" 
-                    placeholder="Choose a username"
-                    value={registerData.username}
-                    onChange={(e) => setRegisterData({...registerData, username: e.target.value})}
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input 
-                      id="firstName" 
-                      type="text" 
-                      placeholder="First name"
-                      value={registerData.firstName}
-                      onChange={(e) => setRegisterData({...registerData, firstName: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input 
-                      id="lastName" 
-                      type="text" 
-                      placeholder="Last name"
-                      value={registerData.lastName}
-                      onChange={(e) => setRegisterData({...registerData, lastName: e.target.value})}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="reg-email">Email</Label>
-                  <Input 
-                    id="reg-email" 
-                    type="email" 
-                    placeholder="Enter your email"
-                    value={registerData.email}
-                    onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="reg-password">Password</Label>
-                  <Input 
-                    id="reg-password" 
-                    type="password" 
-                    placeholder="Create a password"
-                    value={registerData.password}
-                    onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
-                    required
-                  />
-                </div>
-
-                <Button className="w-full" onClick={handleRegister}>
-                  Sign Up
-                </Button>
-              </>
+              <SignIn 
+                fallbackRedirectUrl="/dashboard"
+                appearance={{
+                  elements: {
+                    rootBox: "mx-auto",
+                    card: "shadow-none border-0 bg-transparent",
+                  }
+                }}
+              />
             )}
-
-            <div className="text-center text-sm">
-              {isLogin ? (
-                <>
-                  Don't have an account?{" "}
-                  <button 
-                    onClick={() => setIsLogin(false)}
-                    className="text-primary hover:underline"
-                  >
-                    Sign up
-                  </button>
-                </>
-              ) : (
-                <>
-                  Already have an account?{" "}
-                  <button 
-                    onClick={() => setIsLogin(true)}
-                    className="text-primary hover:underline"
-                  >
-                    Sign in
-                  </button>
-                </>
-              )}
-            </div>
           </CardContent>
         </Card>
 
-        <div className="text-center mt-6">
-          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
-            ← Back to home
-          </Link>
+        {/* Toggle between Sign In and Sign Up */}
+        <div className="text-center">
+          <Button 
+            variant="link" 
+            onClick={() => setIsSignUp(!isSignUp)}
+            className="text-muted-foreground"
+          >
+            {isSignUp 
+              ? "Already have an account? Sign in" 
+              : "Don't have an account? Sign up"
+            }
+          </Button>
         </div>
       </div>
     </div>
