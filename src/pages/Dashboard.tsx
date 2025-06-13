@@ -1,11 +1,12 @@
+
 import { Header } from "@/components/Header"
 import { AppSidebar } from "@/components/AppSidebar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { FileText, CheckSquare, Calendar, Brain, TrendingUp, Clock } from "lucide-react"
+import { FileText, CheckSquare, Calendar, Brain, TrendingUp, Clock, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
-import { useUser } from "@/contexts/UserContext"
+import { useUser } from "@clerk/clerk-react"
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -13,22 +14,10 @@ export default function Dashboard() {
   const { user } = useUser()
 
   const stats = [
-    { title: "Notes Created", value: "24", icon: FileText, change: "+12%" },
-    { title: "Tasks Completed", value: "18", icon: CheckSquare, change: "+8%" },
-    { title: "Study Hours", value: "42", icon: Clock, change: "+15%" },
-    { title: "Goals Achieved", value: "6", icon: TrendingUp, change: "+25%" },
-  ]
-
-  const recentNotes = [
-    { title: "JavaScript Fundamentals", updated: "2 hours ago", tags: ["coding", "web-dev"] },
-    { title: "Machine Learning Basics", updated: "5 hours ago", tags: ["ai", "python"] },
-    { title: "Project Planning", updated: "1 day ago", tags: ["productivity", "planning"] },
-  ]
-
-  const upcomingTasks = [
-    { title: "Complete React assignment", due: "Today", priority: "high" },
-    { title: "Review meeting notes", due: "Tomorrow", priority: "medium" },
-    { title: "Update portfolio", due: "This week", priority: "low" },
+    { title: "Notes Created", value: "0", icon: FileText, change: "+0%" },
+    { title: "Tasks Completed", value: "0", icon: CheckSquare, change: "+0%" },
+    { title: "Study Hours", value: "0", icon: Clock, change: "+0%" },
+    { title: "Goals Achieved", value: "0", icon: TrendingUp, change: "+0%" },
   ]
 
   const getAIInsights = () => {
@@ -39,36 +28,16 @@ export default function Dashboard() {
     navigate("/ai-tips")
   }
 
-  const viewNote = (noteTitle: string) => {
-    toast({
-      title: "Opening note",
-      description: `Loading "${noteTitle}"`,
-    })
+  const createFirstNote = () => {
     navigate("/notes")
   }
 
-  const completeTask = (taskTitle: string) => {
-    toast({
-      title: "Task completed!",
-      description: `"${taskTitle}" marked as complete`,
-    })
-    console.log("Task completed:", taskTitle)
-  }
-
-  const viewAllNotes = () => {
-    navigate("/notes")
-  }
-
-  const viewAllTasks = () => {
+  const createFirstTask = () => {
     navigate("/tasks")
   }
 
-  const refreshTip = () => {
-    toast({
-      title: "New tip loaded",
-      description: "Here's a fresh productivity tip for you!",
-    })
-    console.log("AI tip refreshed")
+  const scheduleEvent = () => {
+    navigate("/calendar")
   }
 
   return (
@@ -83,9 +52,9 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h1 className="text-3xl font-bold">
-                  Welcome back, {user?.firstName || 'User'}!
+                  Welcome to SkillSync, {user?.firstName || 'User'}!
                 </h1>
-                <p className="text-muted-foreground mt-1">Here's what's happening with your productivity today.</p>
+                <p className="text-muted-foreground mt-1">Start your productivity journey by creating your first note or task.</p>
               </div>
               <Button className="gap-2" onClick={getAIInsights}>
                 <Brain className="h-4 w-4" />
@@ -102,7 +71,7 @@ export default function Dashboard() {
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
                         <p className="text-3xl font-bold">{stat.value}</p>
-                        <p className="text-sm text-green-600 font-medium">{stat.change}</p>
+                        <p className="text-sm text-muted-foreground font-medium">{stat.change}</p>
                       </div>
                       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                         <stat.icon className="h-6 w-6 text-primary" />
@@ -114,7 +83,7 @@ export default function Dashboard() {
             </div>
 
             <div className="grid lg:grid-cols-2 gap-6">
-              {/* Recent Notes */}
+              {/* Empty Notes State */}
               <Card className="animate-fade-in" style={{ animationDelay: "0.4s" }}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -123,27 +92,19 @@ export default function Dashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {recentNotes.map((note, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
-                      <div className="flex-1">
-                        <h4 className="font-medium">{note.title}</h4>
-                        <p className="text-sm text-muted-foreground">{note.updated}</p>
-                        <div className="flex gap-1 mt-2">
-                          {note.tags.map((tag) => (
-                            <span key={tag} className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => viewNote(note.title)}>View</Button>
-                    </div>
-                  ))}
-                  <Button variant="outline" className="w-full" onClick={viewAllNotes}>View All Notes</Button>
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No notes yet</h3>
+                    <p className="text-muted-foreground mb-4">Create your first note to get started with organizing your thoughts.</p>
+                    <Button onClick={createFirstNote} className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      Create First Note
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 
-              {/* Upcoming Tasks */}
+              {/* Empty Tasks State */}
               <Card className="animate-fade-in" style={{ animationDelay: "0.5s" }}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -152,27 +113,15 @@ export default function Dashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {upcomingTasks.map((task, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
-                      <div className="flex-1">
-                        <h4 className="font-medium">{task.title}</h4>
-                        <p className="text-sm text-muted-foreground">{task.due}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          task.priority === 'high' ? 'bg-destructive/10 text-destructive' :
-                          task.priority === 'medium' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400' :
-                          'bg-muted text-muted-foreground'
-                        }`}>
-                          {task.priority}
-                        </span>
-                        <Button variant="ghost" size="sm" onClick={() => completeTask(task.title)}>
-                          <CheckSquare className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  <Button variant="outline" className="w-full" onClick={viewAllTasks}>View All Tasks</Button>
+                  <div className="text-center py-8">
+                    <CheckSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No tasks yet</h3>
+                    <p className="text-muted-foreground mb-4">Add your first task to start managing your productivity.</p>
+                    <Button onClick={createFirstTask} className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      Create First Task
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -185,17 +134,17 @@ export default function Dashboard() {
                     <Brain className="h-5 w-5" />
                     AI Productivity Tip
                   </div>
-                  <Button variant="ghost" size="sm" onClick={refreshTip}>
+                  <Button variant="ghost" size="sm" onClick={() => toast({ title: "New tip loaded", description: "Here's a fresh productivity tip for you!" })}>
                     Refresh
                   </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-                  <p className="text-primary font-medium mb-2">💡 Focus Time Recommendation</p>
+                  <p className="text-primary font-medium mb-2">💡 Getting Started Tip</p>
                   <p className="text-sm">
-                    Based on your productivity patterns, your optimal focus time is between 9-11 AM. 
-                    Consider scheduling your most important tasks during this window for maximum efficiency.
+                    Welcome to SkillSync! Start by creating a few notes to capture your ideas, then add some tasks to organize your work. 
+                    The key to productivity is consistent daily habits - even small steps count!
                   </p>
                 </div>
               </CardContent>

@@ -7,23 +7,22 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Upload, User } from "lucide-react"
 import { useState, useRef } from "react"
 import { useToast } from "@/hooks/use-toast"
-import { useUser } from "@/contexts/UserContext"
+import { useUser } from "@clerk/clerk-react"
 
 export function ProfileSettings() {
   const { toast } = useToast()
-  const { user, updateProfile } = useUser()
+  const { user } = useUser()
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const [profileData, setProfileData] = useState({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
-    email: user?.email || "",
-    username: user?.username || ""
+    username: user?.username || "",
   })
 
-  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file) {
+    if (file && user) {
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
         toast({
           title: "File Too Large",
@@ -33,21 +32,24 @@ export function ProfileSettings() {
         return
       }
 
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const avatarUrl = e.target?.result as string
-        updateProfile({ avatar: avatarUrl })
+      try {
+        await user.setProfileImage({ file })
         toast({
           title: "Avatar Updated",
           description: "Your profile picture has been updated successfully",
         })
+      } catch (error) {
+        toast({
+          title: "Upload Failed",
+          description: "Failed to update profile picture",
+          variant: "destructive"
+        })
       }
-      reader.readAsDataURL(file)
     }
   }
 
-  const saveProfile = () => {
-    if (!profileData.firstName.trim() || !profileData.lastName.trim() || !profileData.email.trim() || !profileData.username.trim()) {
+  const saveProfile = async () => {
+    if (!profileData.firstName.trim() || !profileData.lastName.trim()) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields",
@@ -56,11 +58,26 @@ export function ProfileSettings() {
       return
     }
 
-    updateProfile(profileData)
-    toast({
-      title: "Profile Updated",
-      description: "Your profile changes have been saved successfully",
-    })
+    if (!user) return
+
+    try {
+      await user.update({
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        username: profileData.username || undefined,
+      })
+      
+      toast({
+        title: "Profile Updated",
+        description: "Your profile changes have been saved successfully",
+      })
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: "Failed to update profile",
+        variant: "destructive"
+      })
+    }
   }
 
   return (
@@ -74,7 +91,7 @@ export function ProfileSettings() {
       <CardContent className="space-y-6">
         <div className="flex items-center gap-6">
           <Avatar className="h-20 w-20">
-            <AvatarImage src={user?.avatar} alt="Profile" />
+            <AvatarImage src={user?.imageUrl} alt="Profile" />
             <AvatarFallback className="text-lg">
               {user?.firstName?.[0]}{user?.lastName?.[0]}
             </AvatarFallback>
@@ -117,8 +134,9 @@ export function ProfileSettings() {
             <Input 
               id="email" 
               type="email" 
-              value={profileData.email}
-              onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+              value={user?.primaryEmailAddress?.emailAddress || ""}
+              disabled
+              className="bg-muted"
             />
           </div>
         </div>

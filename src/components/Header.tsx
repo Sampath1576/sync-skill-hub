@@ -13,30 +13,6 @@ import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useClerk, useUser } from "@clerk/clerk-react"
 
-const mockNotifications = [
-  {
-    id: 1,
-    title: "Team Meeting",
-    message: "You have a meeting at 2:00 PM today",
-    time: "10 minutes ago",
-    type: "meeting"
-  },
-  {
-    id: 2,
-    title: "Task Due",
-    message: "Complete project documentation by 5:00 PM",
-    time: "1 hour ago",
-    type: "task"
-  },
-  {
-    id: 3,
-    title: "New Note",
-    message: "AI tip: Use the Pomodoro technique for better focus",
-    time: "2 hours ago",
-    type: "tip"
-  }
-]
-
 export function Header() {
   const [searchQuery, setSearchQuery] = useState("")
   const { search, results, isLoading } = useGlobalSearch()
@@ -54,19 +30,6 @@ export function Header() {
 
   const handleSignOut = () => {
     signOut(() => navigate("/"))
-  }
-
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case "meeting":
-        return "📅"
-      case "task":
-        return "✅"
-      case "tip":
-        return "💡"
-      default:
-        return "🔔"
-    }
   }
 
   const handleSearchResultClick = (result: any) => {
@@ -120,11 +83,6 @@ export function Header() {
             <PopoverTrigger asChild>
               <Button variant="ghost" size="sm" className="relative h-9 w-9 rounded-full">
                 <Bell className="h-4 w-4" />
-                {mockNotifications.length > 0 && (
-                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">
-                    {mockNotifications.length}
-                  </Badge>
-                )}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0" align="end">
@@ -132,24 +90,9 @@ export function Header() {
                 <h3 className="font-semibold">Notifications</h3>
               </div>
               <ScrollArea className="h-80">
-                {mockNotifications.length > 0 ? (
-                  <div className="p-2">
-                    {mockNotifications.map((notification) => (
-                      <div key={notification.id} className="flex items-start gap-3 p-3 hover:bg-muted rounded-lg cursor-pointer">
-                        <span className="text-lg">{getNotificationIcon(notification.type)}</span>
-                        <div className="flex-1 space-y-1">
-                          <p className="text-sm font-medium">{notification.title}</p>
-                          <p className="text-xs text-muted-foreground">{notification.message}</p>
-                          <p className="text-xs text-muted-foreground">{notification.time}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-4 text-center text-muted-foreground">
-                    No notifications
-                  </div>
-                )}
+                <div className="p-4 text-center text-muted-foreground">
+                  No notifications yet
+                </div>
               </ScrollArea>
             </PopoverContent>
           </Popover>
