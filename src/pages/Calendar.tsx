@@ -7,16 +7,33 @@ import { useState } from "react"
 import { CalendarWidget } from "@/components/calendar/CalendarWidget"
 import { EventList } from "@/components/calendar/EventList"
 import { EventForm } from "@/components/calendar/EventForm"
-import { useCalendarEvents } from "@/hooks/useCalendarEvents"
-import { Event } from "@/types/calendar"
+import { useSupabaseEvents } from "@/hooks/useSupabaseEvents"
+
+interface EventFormData {
+  title: string
+  description: string
+  event_date: string
+  event_time: string
+  attendees: number
+}
 
 export default function Calendar() {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [isAddEventOpen, setIsAddEventOpen] = useState(false)
-  const [editingEvent, setEditingEvent] = useState<Event | null>(null)
-  const { events, addEvent, updateEvent, deleteEvent } = useCalendarEvents()
+  const [editingEvent, setEditingEvent] = useState<any>(null)
+  const { events, createEvent, updateEvent, deleteEvent } = useSupabaseEvents()
 
-  const handleEditEvent = (event: Event) => {
+  const handleAddEvent = async (eventData: EventFormData) => {
+    await createEvent(eventData)
+    setIsAddEventOpen(false)
+  }
+
+  const handleUpdateEvent = async (eventId: string, eventData: EventFormData) => {
+    await updateEvent(eventId, eventData)
+    setEditingEvent(null)
+  }
+
+  const handleEditEvent = (event: any) => {
     setEditingEvent(event)
   }
 
@@ -63,8 +80,8 @@ export default function Calendar() {
 
             <EventForm
               trigger={<div />}
-              onAddEvent={addEvent}
-              onUpdateEvent={updateEvent}
+              onAddEvent={handleAddEvent}
+              onUpdateEvent={handleUpdateEvent}
               onClose={handleCloseAddDialog}
               isOpen={isAddEventOpen}
             />
@@ -74,8 +91,8 @@ export default function Calendar() {
                 trigger={<div />}
                 isEdit={true}
                 editingEvent={editingEvent}
-                onAddEvent={addEvent}
-                onUpdateEvent={updateEvent}
+                onAddEvent={handleAddEvent}
+                onUpdateEvent={handleUpdateEvent}
                 onClose={handleCloseEditDialog}
                 isOpen={!!editingEvent}
               />

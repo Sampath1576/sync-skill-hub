@@ -9,7 +9,176 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      events: {
+        Row: {
+          attendees: number | null
+          created_at: string | null
+          description: string | null
+          event_date: string
+          event_time: string
+          id: string
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          attendees?: number | null
+          created_at?: string | null
+          description?: string | null
+          event_date: string
+          event_time: string
+          id?: string
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          attendees?: number | null
+          created_at?: string | null
+          description?: string | null
+          event_date?: string
+          event_time?: string
+          id?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notes: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          id: string
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          event_id: string | null
+          id: string
+          message: string
+          read: boolean | null
+          title: string
+          type: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          message: string
+          read?: boolean | null
+          title: string
+          type?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          message?: string
+          read?: boolean | null
+          title?: string
+          type?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          completed: boolean | null
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

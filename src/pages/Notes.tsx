@@ -6,150 +6,44 @@ import { FloatingActionButton } from "@/components/FloatingActionButton"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { Edit, Trash2, Search, Plus, Star } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-
-interface Note {
-  id: number
-  title: string
-  content: string
-  tags: string[]
-  lastModified: string
-  favorite: boolean
-}
+import { Edit, Trash2, Search, Plus } from "lucide-react"
+import { useSupabaseNotes } from "@/hooks/useSupabaseNotes"
 
 export default function Notes() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [newNoteTitle, setNewNoteTitle] = useState("")
   const [newNoteContent, setNewNoteContent] = useState("")
-  const [newNoteTags, setNewNoteTags] = useState("")
-  const [editingNote, setEditingNote] = useState<Note | null>(null)
-  const { toast } = useToast()
+  const [editingNote, setEditingNote] = useState<any>(null)
   
-  const [notes, setNotes] = useState<Note[]>([
-    {
-      id: 1,
-      title: "JavaScript Fundamentals",
-      content: "Variables, functions, loops, and conditionals. ES6 features including arrow functions, destructuring...",
-      tags: ["coding", "javascript", "web-dev"],
-      lastModified: "2 hours ago",
-      favorite: true
-    },
-    {
-      id: 2,
-      title: "Machine Learning Basics",
-      content: "Introduction to ML concepts: supervised learning, unsupervised learning, neural networks...",
-      tags: ["ai", "python", "data-science"],
-      lastModified: "5 hours ago",
-      favorite: false
-    },
-    {
-      id: 3,
-      title: "Project Planning Methods",
-      content: "Agile vs Waterfall, sprint planning, user stories, estimation techniques...",
-      tags: ["productivity", "planning", "agile"],
-      lastModified: "1 day ago",
-      favorite: true
-    },
-    {
-      id: 4,
-      title: "CSS Grid Layout",
-      content: "Grid container, grid items, fr units, grid-template-areas, responsive grids...",
-      tags: ["css", "web-dev", "layout"],
-      lastModified: "2 days ago",
-      favorite: false
-    },
-    {
-      id: 5,
-      title: "Database Design Principles",
-      content: "Normalization, relationships, indexing, performance optimization...",
-      tags: ["database", "sql", "backend"],
-      lastModified: "3 days ago",
-      favorite: false
-    }
-  ])
+  const { notes, isLoading, createNote, updateNote, deleteNote } = useSupabaseNotes()
 
   const filteredNotes = notes.filter(note =>
     note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    note.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+    note.content.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const toggleFavorite = (noteId: number) => {
-    setNotes(prev => prev.map(note => 
-      note.id === noteId ? { ...note, favorite: !note.favorite } : note
-    ))
-    const note = notes.find(n => n.id === noteId)
-    toast({
-      title: note?.favorite ? "Removed from favorites" : "Added to favorites",
-      description: `"${note?.title}" ${note?.favorite ? "removed from" : "added to"} favorites`,
-    })
-  }
-
-  const editNote = (note: Note) => {
+  const editNote = (note: any) => {
     setEditingNote(note)
     setNewNoteTitle(note.title)
     setNewNoteContent(note.content)
-    setNewNoteTags(note.tags.join(", "))
     setIsDialogOpen(true)
   }
 
-  const deleteNote = (noteId: number) => {
-    const note = notes.find(n => n.id === noteId)
-    setNotes(prev => prev.filter(note => note.id !== noteId))
-    toast({
-      title: "Note deleted",
-      description: `"${note?.title}" has been deleted`,
-      variant: "destructive"
-    })
-  }
+  const saveNote = async () => {
+    if (!newNoteTitle.trim()) return
 
-  const saveNote = () => {
-    if (!newNoteTitle.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a note title",
-        variant: "destructive"
-      })
-      return
-    }
-
-    const tags = newNoteTags.split(",").map(tag => tag.trim()).filter(tag => tag)
-    
     if (editingNote) {
-      setNotes(prev => prev.map(note => 
-        note.id === editingNote.id 
-          ? { ...note, title: newNoteTitle, content: newNoteContent, tags, lastModified: "Just now" }
-          : note
-      ))
-      toast({
-        title: "Note updated",
-        description: `"${newNoteTitle}" has been updated`,
-      })
+      await updateNote(editingNote.id, newNoteTitle, newNoteContent)
     } else {
-      const newNote: Note = {
-        id: Math.max(...notes.map(n => n.id)) + 1,
-        title: newNoteTitle,
-        content: newNoteContent,
-        tags,
-        lastModified: "Just now",
-        favorite: false
-      }
-      setNotes(prev => [newNote, ...prev])
-      toast({
-        title: "Note created",
-        description: `"${newNoteTitle}" has been created`,
-      })
+      await createNote(newNoteTitle, newNoteContent)
     }
 
     setIsDialogOpen(false)
     setNewNoteTitle("")
     setNewNoteContent("")
-    setNewNoteTags("")
     setEditingNote(null)
   }
 
@@ -157,8 +51,28 @@ export default function Notes() {
     setEditingNote(null)
     setNewNoteTitle("")
     setNewNoteContent("")
-    setNewNoteTags("")
     setIsDialogOpen(true)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen bg-background">
+        <AppSidebar />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Header />
+          <main className="flex-1 overflow-y-auto p-6">
+            <div className="animate-pulse">
+              <div className="h-8 bg-muted rounded w-48 mb-4"></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="h-48 bg-muted rounded"></div>
+                ))}
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -203,17 +117,6 @@ export default function Notes() {
                           className="h-8 w-8 p-0"
                           onClick={(e) => {
                             e.stopPropagation()
-                            toggleFavorite(note.id)
-                          }}
-                        >
-                          <Star className={`h-4 w-4 ${note.favorite ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 w-8 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation()
                             editNote(note)
                           }}
                         >
@@ -237,15 +140,8 @@ export default function Notes() {
                     <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
                       {note.content}
                     </p>
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {note.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
                     <p className="text-xs text-muted-foreground">
-                      Last modified {note.lastModified}
+                      Last modified {new Date(note.updated_at).toLocaleDateString()}
                     </p>
                   </CardContent>
                 </Card>
@@ -287,11 +183,6 @@ export default function Notes() {
               className="min-h-[300px]"
               value={newNoteContent}
               onChange={(e) => setNewNoteContent(e.target.value)}
-            />
-            <Input 
-              placeholder="Add tags (comma separated)..." 
-              value={newNoteTags}
-              onChange={(e) => setNewNoteTags(e.target.value)}
             />
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
