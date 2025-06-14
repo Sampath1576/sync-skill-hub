@@ -5,17 +5,33 @@ import { Download } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@/contexts/UserContext"
 import { exportToPDF } from "@/utils/pdfExport"
+import { useLocalNotes } from "@/hooks/useLocalNotes"
+import { useLocalTasks } from "@/hooks/useLocalTasks"
+import { useLocalEvents } from "@/hooks/useLocalEvents"
+import { useState } from "react"
 
 export function DataPrivacySettings() {
   const { toast } = useToast()
   const { user } = useUser()
+  const { notes } = useLocalNotes()
+  const { tasks } = useLocalTasks()
+  const { events } = useLocalEvents()
+  const [isExporting, setIsExporting] = useState(false)
 
   const exportData = async () => {
-    if (!user) return
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "User information not available",
+        variant: "destructive"
+      })
+      return
+    }
 
+    setIsExporting(true)
     toast({
       title: "Data Export Started",
-      description: "Your data export will be ready shortly",
+      description: "Your complete data export will be ready shortly",
     })
     
     try {
@@ -26,6 +42,9 @@ export function DataPrivacySettings() {
           email: user.email,
           username: user.username
         },
+        notes: notes,
+        tasks: tasks,
+        events: events,
         settings: {
           email: true,
           push: false,
@@ -35,11 +54,13 @@ export function DataPrivacySettings() {
         exportDate: new Date().toISOString()
       })
       
+      setIsExporting(false)
       toast({
         title: "Export Complete",
-        description: "Your data has been downloaded successfully",
+        description: "Your complete data has been downloaded successfully",
       })
     } catch (error) {
+      setIsExporting(false)
       toast({
         title: "Export Failed",
         description: "There was an error exporting your data",
@@ -70,11 +91,16 @@ export function DataPrivacySettings() {
         <div className="flex items-center justify-between">
           <div>
             <h4 className="font-medium">Export Your Data</h4>
-            <p className="text-sm text-muted-foreground">Download a copy of all your data as PDF</p>
+            <p className="text-sm text-muted-foreground">Download a copy of all your data (notes, tasks, events) as PDF</p>
           </div>
-          <Button variant="outline" onClick={exportData} className="gap-2">
+          <Button 
+            variant="outline" 
+            onClick={exportData} 
+            className="gap-2"
+            disabled={isExporting}
+          >
             <Download className="h-4 w-4" />
-            Export PDF
+            {isExporting ? 'Exporting...' : 'Export PDF'}
           </Button>
         </div>
         

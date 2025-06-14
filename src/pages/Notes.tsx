@@ -77,6 +77,15 @@ export default function Notes() {
       return
     }
 
+    if (notes.length === 0) {
+      toast({
+        title: "No Notes to Export",
+        description: "Create some notes first before exporting",
+        variant: "destructive"
+      })
+      return
+    }
+
     setIsExporting(true)
     toast({
       title: "Exporting Notes",
@@ -150,7 +159,7 @@ export default function Notes() {
                   variant="outline" 
                   className="gap-2" 
                   onClick={exportNotes}
-                  disabled={isExporting}
+                  disabled={isExporting || notes.length === 0}
                 >
                   <Download className="h-4 w-4" />
                   {isExporting ? 'Exporting...' : 'Export PDF'}
