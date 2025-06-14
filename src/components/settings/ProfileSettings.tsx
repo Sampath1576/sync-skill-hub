@@ -55,6 +55,7 @@ export function ProfileSettings() {
               description: "Your profile picture has been updated successfully",
             })
           } catch (error) {
+            console.error('Avatar upload error:', error)
             toast({
               title: "Upload Failed",
               description: "Failed to update profile picture",
@@ -64,6 +65,7 @@ export function ProfileSettings() {
         }
         reader.readAsDataURL(file)
       } catch (error) {
+        console.error('Avatar upload error:', error)
         toast({
           title: "Upload Failed",
           description: "Failed to update profile picture",
@@ -93,20 +95,32 @@ export function ProfileSettings() {
     }
 
     try {
+      console.log('Updating user profile with data:', profileData)
+      
+      // Update user profile using Clerk's update method
       await user.update({
         firstName: profileData.firstName,
         lastName: profileData.lastName,
-        username: profileData.username,
+        username: profileData.username || undefined, // Don't send empty string
       })
       
+      console.log('Profile updated successfully')
       toast({
         title: "Profile Updated",
         description: "Your profile changes have been saved successfully",
       })
     } catch (error) {
+      console.error('Profile update error:', error)
+      
+      // More specific error handling
+      let errorMessage = "Failed to update profile"
+      if (error instanceof Error) {
+        errorMessage = error.message
+      }
+      
       toast({
         title: "Update Failed",
-        description: "Failed to update profile",
+        description: errorMessage,
         variant: "destructive"
       })
     }
