@@ -9,9 +9,10 @@ import { useLocalEvents } from "@/hooks/useLocalEvents"
 
 interface AITipsWidgetProps {
   className?: string
+  style?: React.CSSProperties
 }
 
-export function AITipsWidget({ className }: AITipsWidgetProps) {
+export function AITipsWidget({ className, style }: AITipsWidgetProps) {
   const [currentTip, setCurrentTip] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const { notes } = useLocalNotes()
@@ -73,7 +74,7 @@ export function AITipsWidget({ className }: AITipsWidgetProps) {
   }, [notes.length, tasks.length, events.length])
 
   return (
-    <Card className={className}>
+    <Card className={className} style={style}>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
