@@ -1,12 +1,14 @@
 
 import { Header } from "@/components/Header"
 import { AppSidebar } from "@/components/AppSidebar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Brain, Lightbulb, RefreshCw, Star, Clock, Target, BookOpen } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
+import { Brain, Lightbulb, Target, Clock, BookOpen } from "lucide-react"
+import { AITipsHeader } from "@/components/ai-tips/AITipsHeader"
+import { DailyInsightCard } from "@/components/ai-tips/DailyInsightCard"
+import { AITipCard } from "@/components/ai-tips/AITipCard"
+import { ProductivityProfileCard } from "@/components/ai-tips/ProductivityProfileCard"
+import { TipApplicationDialog } from "@/components/ai-tips/TipApplicationDialog"
 
 interface AITip {
   id: number;
@@ -93,9 +95,10 @@ export default function AITips() {
       setAppliedTips(JSON.parse(stored))
     }
     
-    // Show first 4 tips initially
-    setDisplayedTips(allTips.slice(0, 4))
-  }, [])
+    // Show tips that haven't been applied yet
+    const unappliedTips = allTips.filter(tip => !appliedTips.includes(tip.id))
+    setDisplayedTips(unappliedTips.slice(0, 4))
+  }, [appliedTips, allTips])
 
   const refreshTips = async () => {
     setIsRefreshing(true)
@@ -105,17 +108,16 @@ export default function AITips() {
     })
     
     setTimeout(() => {
-      // Get tips that haven't been shown yet
-      const unusedTips = allTips.filter(tip => !displayedTips.some(d => d.id === tip.id))
+      // Get tips that haven't been applied yet
+      const unappliedTips = allTips.filter(tip => !appliedTips.includes(tip.id))
       
-      if (unusedTips.length >= 2) {
-        // Show 2 new tips plus 2 from current display
-        const newTips = [...unusedTips.slice(0, 2), ...displayedTips.slice(0, 2)]
-        setDisplayedTips(newTips)
-      } else {
-        // If we're running low on unused tips, shuffle and show different ones
-        const shuffled = [...allTips].sort(() => Math.random() - 0.5)
+      if (unappliedTips.length >= 4) {
+        // Show different set of unapplied tips
+        const shuffled = [...unappliedTips].sort(() => Math.random() - 0.5)
         setDisplayedTips(shuffled.slice(0, 4))
+      } else {
+        // If less than 4 unapplied tips, show what's available
+        setDisplayedTips(unappliedTips)
       }
       
       setIsRefreshing(false)
@@ -149,6 +151,9 @@ export default function AITips() {
       setAppliedTips(newAppliedTips)
       localStorage.setItem('skillsync_applied_tips', JSON.stringify(newAppliedTips))
       
+      // Remove the applied tip from displayed tips
+      setDisplayedTips(prev => prev.filter(tip => tip.id !== selectedTip.id))
+      
       toast({
         title: "Tip Applied Successfully!",
         description: `"${selectedTip.title}" has been added to your productivity plan!`,
@@ -168,175 +173,39 @@ export default function AITips() {
         
         <main className="flex-1 overflow-y-auto p-6">
           <div className="animate-fade-in">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h1 className="text-3xl font-bold">AI Productivity Tips</h1>
-                <p className="text-muted-foreground mt-1">Personalized insights to boost your productivity</p>
-              </div>
-              <Button 
-                className="gap-2" 
-                onClick={refreshTips}
-                disabled={isRefreshing}
-              >
-                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                {isRefreshing ? 'Generating...' : 'Refresh Tips'}
-              </Button>
-            </div>
+            <AITipsHeader 
+              isRefreshing={isRefreshing}
+              onRefresh={refreshTips}
+            />
 
-            {/* Daily Insight */}
-            <Card className="mb-8 border-primary/20 bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors" onClick={() => {
-              toast({
-                title: "Daily Insight Expanded",
-                description: "Wednesday productivity patterns have been analyzed and saved to your profile.",
-              })
-            }}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-primary">
-                  <Brain className="h-6 w-6" />
-                  💡 Today's Key Insight
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-lg">
-                  You're most productive on Wednesdays! Consider scheduling important meetings and tasks 
-                  for mid-week to maximize your output.
-                </p>
-              </CardContent>
-            </Card>
+            <DailyInsightCard />
 
             {/* AI Tips Grid */}
             <div className="grid md:grid-cols-2 gap-6">
               {displayedTips.map((tip, index) => (
-                <Card key={tip.id} className="card-hover animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${tip.color}`}>
-                          <tip.icon className="h-6 w-6" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold flex items-center gap-2">
-                            {tip.title}
-                            {appliedTips.includes(tip.id) && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Applied</span>}
-                          </h3>
-                          <span className="text-sm text-muted-foreground">{tip.category}</span>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleFavorite(tip.id)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Star 
-                          className={`h-4 w-4 ${
-                            favoriteTips.includes(tip.id) 
-                              ? 'fill-yellow-400 text-yellow-400' 
-                              : 'text-muted-foreground'
-                          }`} 
-                        />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground leading-relaxed mb-4">{tip.content}</p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full"
-                      onClick={() => openTipDialog(tip)}
-                      disabled={appliedTips.includes(tip.id)}
-                    >
-                      {appliedTips.includes(tip.id) ? 'Tip Applied ✓' : 'Apply This Tip'}
-                    </Button>
-                  </CardContent>
-                </Card>
+                <AITipCard
+                  key={tip.id}
+                  tip={tip}
+                  index={index}
+                  isFavorite={favoriteTips.includes(tip.id)}
+                  isApplied={appliedTips.includes(tip.id)}
+                  onToggleFavorite={toggleFavorite}
+                  onApplyTip={openTipDialog}
+                />
               ))}
             </div>
 
-            {/* Productivity Score */}
-            <Card className="mt-8">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  Your Productivity Profile
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div 
-                    className="text-center cursor-pointer hover:bg-muted/50 p-4 rounded-lg transition-colors"
-                    onClick={() => {
-                      toast({
-                        title: "Morning Person Profile",
-                        description: "Your peak productivity hours and tips for maximizing morning performance.",
-                      })
-                    }}
-                  >
-                    <div className="text-3xl font-bold text-primary mb-2">Morning Person</div>
-                    <p className="text-sm text-muted-foreground">You're 45% more productive in the morning</p>
-                  </div>
-                  <div 
-                    className="text-center cursor-pointer hover:bg-muted/50 p-4 rounded-lg transition-colors"
-                    onClick={() => {
-                      toast({
-                        title: "High Focus Profile",
-                        description: "Your focus patterns and strategies for maintaining concentration.",
-                      })
-                    }}
-                  >
-                    <div className="text-3xl font-bold text-green-600 mb-2">High Focus</div>
-                    <p className="text-sm text-muted-foreground">Average focus session: 32 minutes</p>
-                  </div>
-                  <div 
-                    className="text-center cursor-pointer hover:bg-muted/50 p-4 rounded-lg transition-colors"
-                    onClick={() => {
-                      toast({
-                        title: "Task Switcher Profile",
-                        description: "Your multitasking patterns and optimization recommendations.",
-                      })
-                    }}
-                  >
-                    <div className="text-3xl font-bold text-blue-600 mb-2">Task Switcher</div>
-                    <p className="text-sm text-muted-foreground">You handle 8.5 different tasks per day</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <ProductivityProfileCard />
           </div>
         </main>
       </div>
 
-      {/* Tip Application Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Lightbulb className="h-5 w-5" />
-              Apply: {selectedTip?.title}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="p-4 bg-muted rounded-lg">
-              <h4 className="font-semibold mb-2">Detailed Instructions:</h4>
-              <div className="whitespace-pre-line text-sm">{selectedTip?.instructions}</div>
-            </div>
-            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-              <p className="text-sm text-muted-foreground">
-                By confirming, this tip will be marked as applied and you'll receive guidance on implementing these strategies in your workflow.
-              </p>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={confirmApplyTip}>
-                Confirm & Apply
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <TipApplicationDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        selectedTip={selectedTip}
+        onConfirm={confirmApplyTip}
+      />
     </div>
   )
 }
