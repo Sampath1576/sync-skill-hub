@@ -5,20 +5,31 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Upload, User } from "lucide-react"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
-import { useUser } from "@/contexts/UserContext"
+import { useUser } from "@clerk/clerk-react"
 
 export function ProfileSettings() {
   const { toast } = useToast()
-  const { user, updateProfile } = useUser()
+  const { user, isLoaded } = useUser()
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const [profileData, setProfileData] = useState({
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
-    username: user?.username || "",
+    firstName: "",
+    lastName: "",
+    username: "",
   })
+
+  // Automatically populate profile data when user loads
+  useEffect(() => {
+    if (isLoaded && user) {
+      setProfileData({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        username: user.username || "",
+      })
+    }
+  }, [isLoaded, user])
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -33,15 +44,23 @@ export function ProfileSettings() {
       }
 
       try {
-        // Convert file to base64 URL for storage
+        // Convert file to base64 and update Clerk user profile
         const reader = new FileReader()
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
           const avatarUrl = e.target?.result as string
-          updateProfile({ avatar: avatarUrl })
-          toast({
-            title: "Avatar Updated",
-            description: "Your profile picture has been updated successfully",
-          })
+          try {
+            await user?.setProfileImage({ file })
+            toast({
+              title: "Avatar Updated",
+              description: "Your profile picture has been updated successfully",
+            })
+          } catch (error) {
+            toast({
+              title: "Upload Failed",
+              description: "Failed to update profile picture",
+              variant: "destructive"
+            })
+          }
         }
         reader.readAsDataURL(file)
       } catch (error) {
@@ -74,7 +93,7 @@ export function ProfileSettings() {
     }
 
     try {
-      updateProfile({
+      await user.update({
         firstName: profileData.firstName,
         lastName: profileData.lastName,
         username: profileData.username,
@@ -93,6 +112,28 @@ export function ProfileSettings() {
     }
   }
 
+  if (!isLoaded) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Profile Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="animate-pulse space-y-4">
+            <div className="h-20 w-20 bg-muted rounded-full"></div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="h-10 bg-muted rounded"></div>
+              <div className="h-10 bg-muted rounded"></div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -104,7 +145,7 @@ export function ProfileSettings() {
       <CardContent className="space-y-6">
         <div className="flex items-center gap-6">
           <Avatar className="h-20 w-20">
-            <AvatarImage src={user?.avatar} alt="Profile" />
+            <AvatarImage src={user?.imageUrl} alt="Profile" />
             <AvatarFallback className="text-lg">
               {user?.firstName?.[0]}{user?.lastName?.[0]}
             </AvatarFallback>
@@ -147,7 +188,7 @@ export function ProfileSettings() {
             <Input 
               id="email" 
               type="email" 
-              value={user?.email || ""}
+              value={user?.primaryEmailAddress?.emailAddress || ""}
               disabled
               className="bg-muted"
             />
