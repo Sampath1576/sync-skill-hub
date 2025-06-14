@@ -7,11 +7,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Upload, User } from "lucide-react"
 import { useState, useRef } from "react"
 import { useToast } from "@/hooks/use-toast"
-import { useUser } from "@clerk/clerk-react"
+import { useUser } from "@/contexts/UserContext"
 
 export function ProfileSettings() {
   const { toast } = useToast()
-  const { user } = useUser()
+  const { user, updateProfile } = useUser()
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const [profileData, setProfileData] = useState({
@@ -22,7 +22,7 @@ export function ProfileSettings() {
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file && user) {
+    if (file) {
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
         toast({
           title: "File Too Large",
@@ -33,11 +33,17 @@ export function ProfileSettings() {
       }
 
       try {
-        await user.setProfileImage({ file })
-        toast({
-          title: "Avatar Updated",
-          description: "Your profile picture has been updated successfully",
-        })
+        // Convert file to base64 URL for storage
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const avatarUrl = e.target?.result as string
+          updateProfile({ avatar: avatarUrl })
+          toast({
+            title: "Avatar Updated",
+            description: "Your profile picture has been updated successfully",
+          })
+        }
+        reader.readAsDataURL(file)
       } catch (error) {
         toast({
           title: "Upload Failed",
@@ -58,13 +64,20 @@ export function ProfileSettings() {
       return
     }
 
-    if (!user) return
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "User information not available",
+        variant: "destructive"
+      })
+      return
+    }
 
     try {
-      await user.update({
+      updateProfile({
         firstName: profileData.firstName,
         lastName: profileData.lastName,
-        username: profileData.username || undefined,
+        username: profileData.username,
       })
       
       toast({
@@ -91,7 +104,7 @@ export function ProfileSettings() {
       <CardContent className="space-y-6">
         <div className="flex items-center gap-6">
           <Avatar className="h-20 w-20">
-            <AvatarImage src={user?.imageUrl} alt="Profile" />
+            <AvatarImage src={user?.avatar} alt="Profile" />
             <AvatarFallback className="text-lg">
               {user?.firstName?.[0]}{user?.lastName?.[0]}
             </AvatarFallback>
@@ -134,7 +147,7 @@ export function ProfileSettings() {
             <Input 
               id="email" 
               type="email" 
-              value={user?.primaryEmailAddress?.emailAddress || ""}
+              value={user?.email || ""}
               disabled
               className="bg-muted"
             />

@@ -180,7 +180,7 @@ export default function Notes() {
               {sortedNotes.map((note, index) => (
                 <Card 
                   key={note.id} 
-                  className={`card-hover animate-scale-in cursor-pointer group ${note.favorite ? 'ring-2 ring-yellow-400 bg-yellow-50' : ''}`}
+                  className={`card-hover animate-scale-in cursor-pointer group ${note.favorite ? 'ring-2 ring-yellow-400 dark:ring-yellow-500' : ''}`}
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   <CardHeader className="pb-3">

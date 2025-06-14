@@ -1,16 +1,23 @@
-
 import { Header } from "@/components/Header"
 import { AppSidebar } from "@/components/AppSidebar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendingUp, Target, Clock, Trophy, BarChart3, PieChart, Download, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useUser } from "@/contexts/UserContext"
 import { useLocalNotes } from "@/hooks/useLocalNotes"
 import { useLocalTasks } from "@/hooks/useLocalTasks"
 import { useLocalEvents } from "@/hooks/useLocalEvents"
 import { exportProgressToPDF } from "@/utils/progressPdfExport"
+
+interface WeeklyActivityData {
+  day: string;
+  tasks: number;
+  hours: number;
+  notes: number;
+  events: number;
+}
 
 export default function Progress() {
   const { toast } = useToast()
@@ -42,15 +49,55 @@ export default function Progress() {
     { title: "Productivity Score", value: productivityScore.toString(), total: "100", percentage: productivityScore, icon: TrendingUp },
   ])
 
-  const weeklyData = [
-    { day: "Mon", tasks: Math.floor(completedTasks * 0.15), hours: Math.floor(studyHours * 0.14) },
-    { day: "Tue", tasks: Math.floor(completedTasks * 0.12), hours: Math.floor(studyHours * 0.13) },
-    { day: "Wed", tasks: Math.floor(completedTasks * 0.18), hours: Math.floor(studyHours * 0.16) },
-    { day: "Thu", tasks: Math.floor(completedTasks * 0.14), hours: Math.floor(studyHours * 0.15) },
-    { day: "Fri", tasks: Math.floor(completedTasks * 0.20), hours: Math.floor(studyHours * 0.17) },
-    { day: "Sat", tasks: Math.floor(completedTasks * 0.11), hours: Math.floor(studyHours * 0.12) },
-    { day: "Sun", tasks: Math.floor(completedTasks * 0.10), hours: Math.floor(studyHours * 0.13) },
-  ]
+  // Calculate weekly activity from real data
+  const [weeklyData, setWeeklyData] = useState<WeeklyActivityData[]>([])
+
+  useEffect(() => {
+    calculateWeeklyActivity()
+  }, [tasks, notes, events])
+
+  const calculateWeeklyActivity = () => {
+    const now = new Date()
+    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()))
+    
+    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    
+    const activity = weekDays.map((day, index) => {
+      const dayDate = new Date(startOfWeek)
+      dayDate.setDate(startOfWeek.getDate() + index)
+      const dayStr = dayDate.toISOString().split('T')[0]
+      
+      // Count tasks completed on this day
+      const dayTasks = tasks.filter(task => {
+        if (!task.completed) return false
+        // Assuming tasks have updated_at field when completed
+        const taskDate = new Date(task.updated_at || task.created_at).toISOString().split('T')[0]
+        return taskDate === dayStr
+      }).length
+      
+      // Count notes created on this day
+      const dayNotes = notes.filter(note => {
+        const noteDate = new Date(note.created_at).toISOString().split('T')[0]
+        return noteDate === dayStr
+      }).length
+      
+      // Count events on this day
+      const dayEvents = events.filter(event => {
+        const eventDate = new Date(event.event_date).toISOString().split('T')[0]
+        return eventDate === dayStr
+      }).length
+      
+      return {
+        day,
+        tasks: dayTasks,
+        hours: Math.round(dayTasks * 1.5), // Estimate hours from tasks
+        notes: dayNotes,
+        events: dayEvents
+      }
+    })
+    
+    setWeeklyData(activity)
+  }
 
   const generateReport = async () => {
     setIsGeneratingReport(true)
@@ -213,7 +260,7 @@ export default function Progress() {
             </div>
 
             <div className="grid lg:grid-cols-2 gap-6">
-              {/* Weekly Activity */}
+              {/* Weekly Activity with Real Data */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -230,7 +277,7 @@ export default function Progress() {
                         onClick={() => {
                           toast({
                             title: `${day.day} Activity`,
-                            description: `${day.tasks} tasks completed, ${day.hours} hours studied`,
+                            description: `${day.tasks} tasks completed, ${day.hours} hours studied, ${day.notes} notes created, ${day.events} events`,
                           })
                         }}
                       >
@@ -239,20 +286,24 @@ export default function Progress() {
                           <div className="flex gap-2">
                             <div className="flex-1 bg-muted rounded-full h-2">
                               <div 
-                                className="bg-primary h-2 rounded-full"
-                                style={{ width: `${(day.tasks / Math.max(1, Math.max(...weeklyData.map(d => d.tasks)))) * 100}%` }}
+                                className="bg-primary h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${Math.min(100, (day.tasks / Math.max(1, Math.max(...weeklyData.map(d => d.tasks)))) * 100)}%` }}
                               />
                             </div>
                             <div className="flex-1 bg-muted rounded-full h-2">
                               <div 
-                                className="bg-secondary h-2 rounded-full"
-                                style={{ width: `${(day.hours / Math.max(1, Math.max(...weeklyData.map(d => d.hours)))) * 100}%` }}
+                                className="bg-secondary h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${Math.min(100, (day.notes / Math.max(1, Math.max(...weeklyData.map(d => d.notes)))) * 100)}%` }}
                               />
                             </div>
                           </div>
+                          <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                            <span>Tasks: {day.tasks}</span>
+                            <span>Notes: {day.notes}</span>
+                          </div>
                         </div>
-                        <span className="text-xs text-muted-foreground w-16 text-right">
-                          {day.tasks}t {day.hours}h
+                        <span className="text-xs text-muted-foreground w-20 text-right">
+                          {day.events} events
                         </span>
                       </div>
                     ))}
