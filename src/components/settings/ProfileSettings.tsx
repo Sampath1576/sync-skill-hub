@@ -19,6 +19,7 @@ export function ProfileSettings() {
     lastName: "",
     username: "",
   })
+  const [isUpdating, setIsUpdating] = useState(false)
 
   // Automatically populate profile data when user loads
   useEffect(() => {
@@ -95,16 +96,26 @@ export function ProfileSettings() {
     }
 
     try {
+      setIsUpdating(true)
       console.log('Updating user profile with data:', profileData)
       
-      // Update user profile using Clerk's update method
+      // Update user details with Clerk's correct parameter format
       await user.update({
+        // Use the correct parameter names expected by Clerk API
         firstName: profileData.firstName,
         lastName: profileData.lastName,
-        username: profileData.username || undefined, // Don't send empty string
+        username: profileData.username || undefined,
       })
       
       console.log('Profile updated successfully')
+      
+      // Update local state to reflect changes
+      setProfileData({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        username: user.username || "",
+      })
+      
       toast({
         title: "Profile Updated",
         description: "Your profile changes have been saved successfully",
@@ -123,6 +134,8 @@ export function ProfileSettings() {
         description: errorMessage,
         variant: "destructive"
       })
+    } finally {
+      setIsUpdating(false)
     }
   }
 
@@ -228,7 +241,12 @@ export function ProfileSettings() {
           </div>
         </div>
         
-        <Button onClick={saveProfile}>Save Changes</Button>
+        <Button 
+          onClick={saveProfile} 
+          disabled={isUpdating}
+        >
+          {isUpdating ? 'Saving...' : 'Save Changes'}
+        </Button>
       </CardContent>
     </Card>
   )
