@@ -1,8 +1,7 @@
+
 import { Header } from "@/components/Header"
 import { AppSidebar } from "@/components/AppSidebar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { TrendingUp, Target, Clock, Trophy, BarChart3, PieChart, Download, RefreshCw } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { TrendingUp, Target, Clock, Trophy } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useState, useEffect } from "react"
 import { useUser } from "@/contexts/UserContext"
@@ -10,6 +9,10 @@ import { useLocalNotes } from "@/hooks/useLocalNotes"
 import { useLocalTasks } from "@/hooks/useLocalTasks"
 import { useLocalEvents } from "@/hooks/useLocalEvents"
 import { exportProgressToPDF } from "@/utils/progressPdfExport"
+import { ProgressHeader } from "@/components/progress/ProgressHeader"
+import { ProgressStatsGrid } from "@/components/progress/ProgressStatsGrid"
+import { WeeklyActivityCard } from "@/components/progress/WeeklyActivityCard"
+import { AchievementOverviewCard } from "@/components/progress/AchievementOverviewCard"
 
 interface WeeklyActivityData {
   day: string;
@@ -193,177 +196,24 @@ export default function Progress() {
         
         <main className="flex-1 overflow-y-auto p-6">
           <div className="animate-fade-in">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h1 className="text-3xl font-bold">Progress Tracker</h1>
-                <p className="text-muted-foreground mt-1">Monitor your productivity and achievements</p>
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  className="gap-2" 
-                  onClick={refreshData}
-                  disabled={isRefreshing}
-                >
-                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  {isRefreshing ? 'Refreshing...' : 'Refresh'}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="gap-2" 
-                  onClick={exportData}
-                  disabled={isExporting}
-                >
-                  <Download className="h-4 w-4" />
-                  {isExporting ? 'Exporting...' : 'Export PDF'}
-                </Button>
-                <Button 
-                  className="gap-2" 
-                  onClick={generateReport}
-                  disabled={isGeneratingReport}
-                >
-                  <BarChart3 className="h-4 w-4" />
-                  {isGeneratingReport ? 'Generating...' : 'Generate Report'}
-                </Button>
-              </div>
-            </div>
+            <ProgressHeader
+              onRefresh={refreshData}
+              onExport={exportData}
+              onGenerateReport={generateReport}
+              isRefreshing={isRefreshing}
+              isExporting={isExporting}
+              isGeneratingReport={isGeneratingReport}
+            />
 
-            {/* Progress Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {progressStats.map((stat, index) => (
-                <Card key={stat.title} className="card-hover cursor-pointer" onClick={() => {
-                  toast({
-                    title: stat.title,
-                    description: `Current progress: ${stat.value}/${stat.total} (${stat.percentage}%)`,
-                  })
-                }}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <stat.icon className="h-6 w-6 text-primary" />
-                      </div>
-                      <span className="text-2xl font-bold">{stat.percentage}%</span>
-                    </div>
-                    <h3 className="font-medium mb-2">{stat.title}</h3>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>{stat.value}/{stat.total}</span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2 mt-3">
-                      <div 
-                        className="bg-primary h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${stat.percentage}%` }}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <ProgressStatsGrid stats={progressStats} />
 
             <div className="grid lg:grid-cols-2 gap-6">
-              {/* Weekly Activity with Real Data */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5" />
-                    Weekly Activity
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {weeklyData.map((day, index) => (
-                      <div 
-                        key={day.day} 
-                        className="flex items-center justify-between hover:bg-muted/50 p-2 rounded cursor-pointer transition-colors"
-                        onClick={() => {
-                          toast({
-                            title: `${day.day} Activity`,
-                            description: `${day.tasks} tasks completed, ${day.hours} hours studied, ${day.notes} notes created, ${day.events} events`,
-                          })
-                        }}
-                      >
-                        <span className="text-sm font-medium w-12">{day.day}</span>
-                        <div className="flex-1 mx-4">
-                          <div className="flex gap-2">
-                            <div className="flex-1 bg-muted rounded-full h-2">
-                              <div 
-                                className="bg-primary h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${Math.min(100, (day.tasks / Math.max(1, Math.max(...weeklyData.map(d => d.tasks)))) * 100)}%` }}
-                              />
-                            </div>
-                            <div className="flex-1 bg-muted rounded-full h-2">
-                              <div 
-                                className="bg-secondary h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${Math.min(100, (day.notes / Math.max(1, Math.max(...weeklyData.map(d => d.notes)))) * 100)}%` }}
-                              />
-                            </div>
-                          </div>
-                          <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                            <span>Tasks: {day.tasks}</span>
-                            <span>Notes: {day.notes}</span>
-                          </div>
-                        </div>
-                        <span className="text-xs text-muted-foreground w-20 text-right">
-                          {day.events} events
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Achievement Overview */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <PieChart className="h-5 w-5" />
-                    Achievement Overview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <div 
-                        className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4 cursor-pointer hover:bg-primary/20 transition-colors"
-                        onClick={() => {
-                          toast({
-                            title: "Productivity Score",
-                            description: `Current productivity score: ${productivityScore}%`,
-                          })
-                        }}
-                      >
-                        <div className="text-3xl font-bold text-primary">{productivityScore}%</div>
-                      </div>
-                      <p className="text-sm text-muted-foreground">Overall Productivity Score</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                      <div 
-                        className="text-center cursor-pointer hover:bg-muted/50 p-2 rounded transition-colors"
-                        onClick={() => {
-                          toast({
-                            title: "Task Completion",
-                            description: `${taskCompletionRate}% of tasks completed`,
-                          })
-                        }}
-                      >
-                        <div className="text-2xl font-bold text-green-600">{taskCompletionRate}%</div>
-                        <p className="text-xs text-muted-foreground">Task Completion</p>
-                      </div>
-                      <div 
-                        className="text-center cursor-pointer hover:bg-muted/50 p-2 rounded transition-colors"
-                        onClick={() => {
-                          toast({
-                            title: "Goal Achievement",
-                            description: `${goalAchievementRate}% goal achievement rate`,
-                          })
-                        }}
-                      >
-                        <div className="text-2xl font-bold text-blue-600">{goalAchievementRate}%</div>
-                        <p className="text-xs text-muted-foreground">Goal Achievement</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <WeeklyActivityCard weeklyData={weeklyData} />
+              <AchievementOverviewCard 
+                productivityScore={productivityScore}
+                taskCompletionRate={taskCompletionRate}
+                goalAchievementRate={goalAchievementRate}
+              />
             </div>
           </div>
         </main>
