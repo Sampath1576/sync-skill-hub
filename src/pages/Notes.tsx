@@ -8,7 +8,7 @@ import { NotesGrid } from "@/components/notes/NotesGrid"
 import { EmptyNotesState } from "@/components/notes/EmptyNotesState"
 import { CreateNoteDialog } from "@/components/notes/CreateNoteDialog"
 import { Plus } from "lucide-react"
-import { useLocalNotes } from "@/hooks/useLocalNotes"
+import { useSupabaseNotes } from "@/hooks/useSupabaseNotes"
 
 export default function Notes() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -17,17 +17,15 @@ export default function Notes() {
   const [newNoteContent, setNewNoteContent] = useState("")
   const [editingNote, setEditingNote] = useState<any>(null)
   
-  const { notes, isLoading, createNote, updateNote, deleteNote, toggleFavorite } = useLocalNotes()
+  const { notes, isLoading, createNote, updateNote, deleteNote } = useSupabaseNotes()
 
   const filteredNotes = notes.filter(note =>
     note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     note.content.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  // Sort notes: favorites first, then by updated date
+  // Sort notes by updated date
   const sortedNotes = [...filteredNotes].sort((a, b) => {
-    if (a.favorite && !b.favorite) return -1
-    if (!a.favorite && b.favorite) return 1
     return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
   })
 
@@ -36,6 +34,11 @@ export default function Notes() {
     setNewNoteTitle(note.title)
     setNewNoteContent(note.content)
     setIsDialogOpen(true)
+  }
+
+  const toggleFavorite = async (noteId: string) => {
+    // This functionality needs to be added to the Supabase hook
+    console.log('Toggle favorite for note:', noteId)
   }
 
   const saveNote = async () => {
