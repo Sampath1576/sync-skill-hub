@@ -48,17 +48,19 @@ export function useProfileManager() {
       setIsUpdating(true)
       console.log('Updating user profile with data:', profileData)
       
-      // Update user details with Clerk's correct parameter format
+      // Update user details with Clerk's correct API
       await user.update({
-        // Use the correct parameter names expected by Clerk API
-        firstName: profileData.firstName,
-        lastName: profileData.lastName,
-        username: profileData.username || undefined,
+        firstName: profileData.firstName.trim(),
+        lastName: profileData.lastName.trim(),
+        username: profileData.username.trim() || null,
       })
       
       console.log('Profile updated successfully')
       
-      // Update local state to reflect changes
+      // Force a reload of the user data to get the latest info
+      await user.reload()
+      
+      // Update local state to reflect the actual saved changes
       setProfileData({
         firstName: user.firstName || "",
         lastName: user.lastName || "",
@@ -83,6 +85,15 @@ export function useProfileManager() {
         description: errorMessage,
         variant: "destructive"
       })
+      
+      // Reset to current user data on error
+      if (user) {
+        setProfileData({
+          firstName: user.firstName || "",
+          lastName: user.lastName || "",
+          username: user.username || "",
+        })
+      }
     } finally {
       setIsUpdating(false)
     }
