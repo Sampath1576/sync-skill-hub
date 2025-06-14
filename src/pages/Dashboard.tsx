@@ -1,4 +1,3 @@
-
 import { Header } from "@/components/Header"
 import { AppSidebar } from "@/components/AppSidebar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,14 +11,39 @@ import { useLocalTasks } from "@/hooks/useLocalTasks"
 import { useLocalEvents } from "@/hooks/useLocalEvents"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AITipsWidget } from "@/components/AITipsWidget"
+import { useEffect } from "react"
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const { toast } = useToast()
-  const { user } = useUser()
+  const { user, isLoaded, isSignedIn } = useUser()
   const { notes, isLoading: notesLoading } = useLocalNotes()
   const { tasks, isLoading: tasksLoading } = useLocalTasks()
   const { events, isLoading: eventsLoading } = useLocalEvents()
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      navigate('/login', { replace: true })
+    }
+  }, [isLoaded, isSignedIn, navigate])
+
+  // Show loading while checking auth state
+  if (!isLoaded) {
+    return (
+      <div className="flex h-screen bg-background items-center justify-center">
+        <div className="animate-pulse text-center">
+          <div className="h-8 bg-muted rounded w-48 mb-4 mx-auto"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render if not signed in (will redirect)
+  if (!isSignedIn) {
+    return null
+  }
 
   // Check if user has sample data
   const hasSampleData = notes.some(note => note.title.includes('Welcome to SkillSync')) ||
