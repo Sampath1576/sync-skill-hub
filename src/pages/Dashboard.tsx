@@ -1,3 +1,4 @@
+
 import { Header } from "@/components/Header"
 import { AppSidebar } from "@/components/AppSidebar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -6,22 +7,22 @@ import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@clerk/clerk-react"
-import { useSupabaseNotes } from "@/hooks/useSupabaseNotes"
-import { useSupabaseTasks } from "@/hooks/useSupabaseTasks"
-import { useSupabaseEvents } from "@/hooks/useSupabaseEvents"
+import { useLocalNotes } from "@/hooks/useLocalNotes"
+import { useLocalTasks } from "@/hooks/useLocalTasks"
+import { useLocalEvents } from "@/hooks/useLocalEvents"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const { toast } = useToast()
   const { user } = useUser()
-  const { notes, isLoading: notesLoading } = useSupabaseNotes()
-  const { tasks, isLoading: tasksLoading } = useSupabaseTasks()
-  const { events, isLoading: eventsLoading } = useSupabaseEvents()
+  const { notes, isLoading: notesLoading } = useLocalNotes()
+  const { tasks, isLoading: tasksLoading } = useLocalTasks()
+  const { events, isLoading: eventsLoading } = useLocalEvents()
 
   // Check if user has sample data
   const hasSampleData = notes.some(note => note.title.includes('Welcome to SkillSync')) ||
-                       tasks.some(task => task.title.includes('Welcome Task')) ||
+                       tasks.some(task => task.title.includes('Complete Project Setup')) ||
                        events.some(event => event.title.includes('SkillSync Orientation'))
 
   // Calculate progress statistics
@@ -49,18 +50,6 @@ export default function Dashboard() {
       description: "Opening AI Productivity Tips page...",
     })
     navigate("/ai-tips")
-  }
-
-  const createFirstNote = () => {
-    navigate("/notes")
-  }
-
-  const createFirstTask = () => {
-    navigate("/tasks")
-  }
-
-  const scheduleEvent = () => {
-    navigate("/calendar")
   }
 
   if (notesLoading || tasksLoading || eventsLoading) {

@@ -7,7 +7,7 @@ import { useState } from "react"
 import { CalendarWidget } from "@/components/calendar/CalendarWidget"
 import { EventList } from "@/components/calendar/EventList"
 import { EventForm } from "@/components/calendar/EventForm"
-import { useSupabaseEvents } from "@/hooks/useSupabaseEvents"
+import { useLocalEvents } from "@/hooks/useLocalEvents"
 
 interface EventFormData {
   title: string
@@ -21,7 +21,7 @@ export default function Calendar() {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [isAddEventOpen, setIsAddEventOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<any>(null)
-  const { events, createEvent, updateEvent, deleteEvent } = useSupabaseEvents()
+  const { events, createEvent, updateEvent, deleteEvent } = useLocalEvents()
 
   const handleAddEvent = async (eventData: EventFormData) => {
     await createEvent(eventData)

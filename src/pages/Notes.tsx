@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Edit, Trash2, Search, Plus } from "lucide-react"
-import { useSupabaseNotes } from "@/hooks/useSupabaseNotes"
+import { useLocalNotes } from "@/hooks/useLocalNotes"
 
 export default function Notes() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -18,7 +18,7 @@ export default function Notes() {
   const [newNoteContent, setNewNoteContent] = useState("")
   const [editingNote, setEditingNote] = useState<any>(null)
   
-  const { notes, isLoading, createNote, updateNote, deleteNote } = useSupabaseNotes()
+  const { notes, isLoading, createNote, updateNote, deleteNote } = useLocalNotes()
 
   const filteredNotes = notes.filter(note =>
     note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

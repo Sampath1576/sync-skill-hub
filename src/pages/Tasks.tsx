@@ -3,7 +3,7 @@ import { useState } from "react"
 import { Header } from "@/components/Header"
 import { AppSidebar } from "@/components/AppSidebar"
 import { FloatingActionButton } from "@/components/FloatingActionButton"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Calendar, Plus, Filter, Edit, Trash2 } from "lucide-react"
-import { useSupabaseTasks } from "@/hooks/useSupabaseTasks"
+import { useLocalTasks } from "@/hooks/useLocalTasks"
 
 export default function Tasks() {
   const [view, setView] = useState("list")
@@ -31,7 +31,7 @@ export default function Tasks() {
   const [newTaskDueDate, setNewTaskDueDate] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   
-  const { tasks, isLoading, createTask, updateTask, deleteTask, toggleTaskCompletion } = useSupabaseTasks()
+  const { tasks, isLoading, createTask, updateTask, deleteTask, toggleTaskCompletion } = useLocalTasks()
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
