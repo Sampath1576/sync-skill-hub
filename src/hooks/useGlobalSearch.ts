@@ -1,56 +1,16 @@
 
 import { useState, useEffect } from 'react';
 import { SearchResult } from '@/contexts/SearchContext';
-
-// Mock data for search functionality
-const mockData: SearchResult[] = [
-  {
-    id: '1',
-    title: 'JavaScript Fundamentals',
-    content: 'Learn the basics of JavaScript programming language including variables, functions, and control structures.',
-    type: 'note',
-    url: '/notes'
-  },
-  {
-    id: '2',
-    title: 'Complete React assignment',
-    content: 'Finish the React component assignment for the web development course.',
-    type: 'task',
-    url: '/tasks'
-  },
-  {
-    id: '3',
-    title: 'Team Meeting',
-    content: 'Weekly team standup meeting to discuss project progress and upcoming deadlines.',
-    type: 'event',
-    url: '/calendar'
-  },
-  {
-    id: '4',
-    title: 'Machine Learning Basics',
-    content: 'Introduction to machine learning concepts, algorithms, and practical applications.',
-    type: 'note',
-    url: '/notes'
-  },
-  {
-    id: '5',
-    title: 'Review meeting notes',
-    content: 'Go through the notes from yesterday\'s client meeting and prepare action items.',
-    type: 'task',
-    url: '/tasks'
-  },
-  {
-    id: '6',
-    title: 'Project Planning',
-    content: 'Strategic planning document for the upcoming product launch and timeline.',
-    type: 'note',
-    url: '/notes'
-  },
-];
+import { useLocalNotes } from '@/hooks/useLocalNotes';
+import { useLocalTasks } from '@/hooks/useLocalTasks';
+import { useLocalEvents } from '@/hooks/useLocalEvents';
 
 export function useGlobalSearch() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { notes } = useLocalNotes();
+  const { tasks } = useLocalTasks();
+  const { events } = useLocalEvents();
 
   const search = async (query: string): Promise<SearchResult[]> => {
     setIsLoading(true);
@@ -64,14 +24,53 @@ export function useGlobalSearch() {
       return [];
     }
 
-    const filteredResults = mockData.filter(item =>
-      item.title.toLowerCase().includes(query.toLowerCase()) ||
-      item.content.toLowerCase().includes(query.toLowerCase())
-    );
+    const searchResults: SearchResult[] = [];
 
-    setResults(filteredResults);
+    // Search in notes
+    notes.forEach(note => {
+      if (note.title.toLowerCase().includes(query.toLowerCase()) ||
+          note.content.toLowerCase().includes(query.toLowerCase())) {
+        searchResults.push({
+          id: note.id,
+          title: note.title,
+          content: note.content.substring(0, 100) + (note.content.length > 100 ? '...' : ''),
+          type: 'note',
+          url: '/notes'
+        });
+      }
+    });
+
+    // Search in tasks
+    tasks.forEach(task => {
+      if (task.title.toLowerCase().includes(query.toLowerCase()) ||
+          task.description.toLowerCase().includes(query.toLowerCase())) {
+        searchResults.push({
+          id: task.id,
+          title: task.title,
+          content: task.description,
+          type: 'task',
+          url: '/tasks'
+        });
+      }
+    });
+
+    // Search in events
+    events.forEach(event => {
+      if (event.title.toLowerCase().includes(query.toLowerCase()) ||
+          event.description.toLowerCase().includes(query.toLowerCase())) {
+        searchResults.push({
+          id: event.id,
+          title: event.title,
+          content: event.description,
+          type: 'event',
+          url: '/calendar'
+        });
+      }
+    });
+
+    setResults(searchResults);
     setIsLoading(false);
-    return filteredResults;
+    return searchResults;
   };
 
   return {

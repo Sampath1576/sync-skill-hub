@@ -11,6 +11,7 @@ import { useLocalNotes } from "@/hooks/useLocalNotes"
 import { useLocalTasks } from "@/hooks/useLocalTasks"
 import { useLocalEvents } from "@/hooks/useLocalEvents"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AITipsWidget } from "@/components/AITipsWidget"
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -29,6 +30,7 @@ export default function Dashboard() {
   const totalTasks = tasks.length
   const completedTasks = tasks.filter(task => task.completed).length
   const totalNotes = notes.length
+  const favoriteNotes = notes.filter(note => note.favorite).length
   const upcomingEvents = events.filter(event => new Date(event.event_date) >= new Date()).length
   
   // Calculate completion percentage
@@ -38,7 +40,7 @@ export default function Dashboard() {
   const studyHours = Math.round(completedTasks * 1.5) // Assuming 1.5 hours per completed task
 
   const stats = [
-    { title: "Notes Created", value: totalNotes.toString(), icon: FileText, change: `+${totalNotes}` },
+    { title: "Notes Created", value: `${totalNotes} (${favoriteNotes} ⭐)`, icon: FileText, change: `+${totalNotes}` },
     { title: "Tasks Completed", value: `${completedTasks}/${totalTasks}`, icon: CheckSquare, change: `${completionRate}%` },
     { title: "Study Hours", value: studyHours.toString(), icon: Clock, change: `+${studyHours}h` },
     { title: "Upcoming Events", value: upcomingEvents.toString(), icon: TrendingUp, change: `+${upcomingEvents}` },
@@ -89,7 +91,7 @@ export default function Dashboard() {
                 </h1>
                 <p className="text-muted-foreground mt-1">
                   {totalNotes > 0 || totalTasks > 0 
-                    ? `You have ${totalNotes} notes and ${totalTasks} tasks. Keep up the great work!`
+                    ? `You have ${totalNotes} notes (${favoriteNotes} favorites) and ${totalTasks} tasks. Keep up the great work!`
                     : "Start your productivity journey by creating your first note or task."
                   }
                 </p>
@@ -144,10 +146,13 @@ export default function Dashboard() {
                     <>
                       {notes.slice(0, 3).map((note) => (
                         <div key={note.id} className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer" onClick={() => navigate("/notes")}>
-                          <h4 className="font-medium">{note.title}</h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium">{note.title}</h4>
+                            {note.favorite && <span className="text-yellow-500">⭐</span>}
+                          </div>
                           <p className="text-sm text-muted-foreground line-clamp-2">{note.content}</p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(note.updated_at).toLocaleDateString()}
+                            Last modified {new Date(note.updated_at).toLocaleDateString()}
                           </p>
                         </div>
                       ))}
@@ -233,7 +238,7 @@ export default function Dashboard() {
                   <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                     <h4 className="font-semibold text-green-700 mb-2">Knowledge Base</h4>
                     <p className="text-2xl font-bold text-green-600">{totalNotes}</p>
-                    <p className="text-sm text-green-600">Notes created</p>
+                    <p className="text-sm text-green-600">Notes created ({favoriteNotes} favorites)</p>
                   </div>
                   <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <h4 className="font-semibold text-blue-700 mb-2">Upcoming Events</h4>
@@ -245,30 +250,7 @@ export default function Dashboard() {
             </Card>
 
             {/* AI Tips */}
-            <Card className="mt-6 animate-fade-in" style={{ animationDelay: "0.7s" }}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Brain className="h-5 w-5" />
-                    AI Productivity Tip
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={() => toast({ title: "New tip loaded", description: "Here's a fresh productivity tip for you!" })}>
-                    Refresh
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-                  <p className="text-primary font-medium mb-2">💡 {totalTasks > 0 ? "Productivity" : "Getting Started"} Tip</p>
-                  <p className="text-sm">
-                    {totalTasks > 0 
-                      ? `Great progress! You've completed ${completionRate}% of your tasks. Try breaking down larger tasks into smaller, manageable chunks to maintain momentum.`
-                      : "Welcome to SkillSync! Start by creating a few notes to capture your ideas, then add some tasks to organize your work. The key to productivity is consistent daily habits - even small steps count!"
-                    }
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <AITipsWidget className="mt-6 animate-fade-in" style={{ animationDelay: "0.7s" } as any} />
           </div>
         </main>
       </div>
