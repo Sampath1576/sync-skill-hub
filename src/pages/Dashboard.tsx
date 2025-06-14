@@ -1,8 +1,7 @@
-
 import { Header } from "@/components/Header"
 import { AppSidebar } from "@/components/AppSidebar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { FileText, CheckSquare, Calendar, Brain, TrendingUp, Clock, Plus } from "lucide-react"
+import { FileText, CheckSquare, Calendar, Brain, TrendingUp, Clock, Plus, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
@@ -10,6 +9,7 @@ import { useUser } from "@clerk/clerk-react"
 import { useSupabaseNotes } from "@/hooks/useSupabaseNotes"
 import { useSupabaseTasks } from "@/hooks/useSupabaseTasks"
 import { useSupabaseEvents } from "@/hooks/useSupabaseEvents"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -18,6 +18,11 @@ export default function Dashboard() {
   const { notes, isLoading: notesLoading } = useSupabaseNotes()
   const { tasks, isLoading: tasksLoading } = useSupabaseTasks()
   const { events, isLoading: eventsLoading } = useSupabaseEvents()
+
+  // Check if user has sample data
+  const hasSampleData = notes.some(note => note.title.includes('Welcome to SkillSync')) ||
+                       tasks.some(task => task.title.includes('Welcome Task')) ||
+                       events.some(event => event.title.includes('SkillSync Orientation'))
 
   // Calculate progress statistics
   const totalTasks = tasks.length
@@ -106,6 +111,16 @@ export default function Dashboard() {
               </Button>
             </div>
 
+            {/* Sample Data Alert */}
+            {hasSampleData && (
+              <Alert className="mb-6 border-blue-200 bg-blue-50">
+                <Info className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800">
+                  <strong>Welcome!</strong> This is sample data to help you get started. You can edit or delete these items and add your own content to make SkillSync your personal productivity hub.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {stats.map((stat, index) => (
@@ -158,7 +173,7 @@ export default function Dashboard() {
                       <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-medium mb-2">No notes yet</h3>
                       <p className="text-muted-foreground mb-4">Create your first note to get started with organizing your thoughts.</p>
-                      <Button onClick={createFirstNote} className="gap-2">
+                      <Button onClick={() => navigate("/notes")} className="gap-2">
                         <Plus className="h-4 w-4" />
                         Create First Note
                       </Button>
@@ -201,7 +216,7 @@ export default function Dashboard() {
                       <CheckSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-medium mb-2">No tasks yet</h3>
                       <p className="text-muted-foreground mb-4">Add your first task to start managing your productivity.</p>
-                      <Button onClick={createFirstTask} className="gap-2">
+                      <Button onClick={() => navigate("/tasks")} className="gap-2">
                         <Plus className="h-4 w-4" />
                         Create First Task
                       </Button>

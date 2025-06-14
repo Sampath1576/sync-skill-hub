@@ -21,22 +21,31 @@ export function useSupabaseEvents() {
   const { toast } = useToast()
 
   const fetchEvents = async () => {
-    if (!user) return
+    if (!user) {
+      setIsLoading(false)
+      return
+    }
 
     try {
+      console.log('Fetching events for user:', user.id)
       const { data, error } = await supabase
         .from('events')
         .select('*')
         .eq('user_id', user.id)
         .order('event_date', { ascending: true })
 
-      if (error) throw error
+      if (error) {
+        console.error('Error fetching events:', error)
+        throw error
+      }
+      
+      console.log('Events fetched:', data?.length || 0)
       setEvents(data || [])
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching events:', error)
       toast({
         title: "Error",
-        description: "Failed to load events",
+        description: error.message || "Failed to load events",
         variant: "destructive"
       })
     } finally {
@@ -54,6 +63,7 @@ export function useSupabaseEvents() {
     if (!user) return
 
     try {
+      console.log('Creating event for user:', user.id)
       const { data, error } = await supabase
         .from('events')
         .insert([{
@@ -63,7 +73,10 @@ export function useSupabaseEvents() {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error creating event:', error)
+        throw error
+      }
       
       setEvents(prev => [...prev, data])
       toast({
@@ -71,11 +84,11 @@ export function useSupabaseEvents() {
         description: `"${eventData.title}" has been scheduled`,
       })
       return data
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating event:', error)
       toast({
         title: "Error",
-        description: "Failed to create event",
+        description: error.message || "Failed to create event",
         variant: "destructive"
       })
     }
@@ -89,14 +102,19 @@ export function useSupabaseEvents() {
     attendees: number
   }) => {
     try {
+      console.log('Updating event:', id)
       const { data, error } = await supabase
         .from('events')
         .update(eventData)
         .eq('id', id)
+        .eq('user_id', user?.id)
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error updating event:', error)
+        throw error
+      }
 
       setEvents(prev => prev.map(event => event.id === id ? data : event))
       toast({
@@ -104,11 +122,11 @@ export function useSupabaseEvents() {
         description: "Event has been successfully updated",
       })
       return data
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating event:', error)
       toast({
         title: "Error",
-        description: "Failed to update event",
+        description: error.message || "Failed to update event",
         variant: "destructive"
       })
     }
@@ -116,30 +134,37 @@ export function useSupabaseEvents() {
 
   const deleteEvent = async (id: string) => {
     try {
+      console.log('Deleting event:', id)
       const { error } = await supabase
         .from('events')
         .delete()
         .eq('id', id)
+        .eq('user_id', user?.id)
 
-      if (error) throw error
+      if (error) {
+        console.error('Error deleting event:', error)
+        throw error
+      }
 
       setEvents(prev => prev.filter(event => event.id !== id))
       toast({
         title: "Event deleted",
         description: "Event has been removed from your calendar",
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting event:', error)
       toast({
         title: "Error",
-        description: "Failed to delete event",
+        description: error.message || "Failed to delete event",
         variant: "destructive"
       })
     }
   }
 
   useEffect(() => {
-    fetchEvents()
+    if (user) {
+      fetchEvents()
+    }
   }, [user])
 
   return {

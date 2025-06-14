@@ -19,22 +19,42 @@ export function useSupabaseNotes() {
   const { toast } = useToast()
 
   const fetchNotes = async () => {
-    if (!user) return
+    if (!user) {
+      setIsLoading(false)
+      return
+    }
 
     try {
+      console.log('Fetching notes for user:', user.id)
       const { data, error } = await supabase
         .from('notes')
         .select('*')
         .eq('user_id', user.id)
         .order('updated_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('Error fetching notes:', error)
+        throw error
+      }
+      
+      console.log('Notes fetched:', data?.length || 0)
       setNotes(data || [])
-    } catch (error) {
+      
+      // Show welcome message for new users with sample data
+      if (data && data.length > 0 && data.some(note => note.title.includes('Welcome to SkillSync'))) {
+        const hasWelcomeNote = data.find(note => note.title.includes('Welcome to SkillSync'))
+        if (hasWelcomeNote) {
+          toast({
+            title: "Welcome to SkillSync! 🎉",
+            description: "We've added some sample notes to help you get started. Feel free to edit or delete them and add your own content.",
+          })
+        }
+      }
+    } catch (error: any) {
       console.error('Error fetching notes:', error)
       toast({
         title: "Error",
-        description: "Failed to load notes",
+        description: error.message || "Failed to load notes",
         variant: "destructive"
       })
     } finally {
@@ -46,6 +66,7 @@ export function useSupabaseNotes() {
     if (!user) return
 
     try {
+      console.log('Creating note for user:', user.id)
       const { data, error } = await supabase
         .from('notes')
         .insert([{
@@ -56,7 +77,10 @@ export function useSupabaseNotes() {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error creating note:', error)
+        throw error
+      }
       
       setNotes(prev => [data, ...prev])
       toast({
@@ -64,11 +88,11 @@ export function useSupabaseNotes() {
         description: `"${title}" has been created`,
       })
       return data
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating note:', error)
       toast({
         title: "Error",
-        description: "Failed to create note",
+        description: error.message || "Failed to create note",
         variant: "destructive"
       })
     }
@@ -76,14 +100,19 @@ export function useSupabaseNotes() {
 
   const updateNote = async (id: string, title: string, content: string) => {
     try {
+      console.log('Updating note:', id)
       const { data, error } = await supabase
         .from('notes')
         .update({ title, content, updated_at: new Date().toISOString() })
         .eq('id', id)
+        .eq('user_id', user?.id)
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error updating note:', error)
+        throw error
+      }
 
       setNotes(prev => prev.map(note => note.id === id ? data : note))
       toast({
@@ -91,11 +120,11 @@ export function useSupabaseNotes() {
         description: `"${title}" has been updated`,
       })
       return data
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating note:', error)
       toast({
         title: "Error",
-        description: "Failed to update note",
+        description: error.message || "Failed to update note",
         variant: "destructive"
       })
     }
@@ -103,12 +132,17 @@ export function useSupabaseNotes() {
 
   const deleteNote = async (id: string) => {
     try {
+      console.log('Deleting note:', id)
       const { error } = await supabase
         .from('notes')
         .delete()
         .eq('id', id)
+        .eq('user_id', user?.id)
 
-      if (error) throw error
+      if (error) {
+        console.error('Error deleting note:', error)
+        throw error
+      }
 
       setNotes(prev => prev.filter(note => note.id !== id))
       toast({
@@ -116,18 +150,20 @@ export function useSupabaseNotes() {
         description: "Note has been deleted",
         variant: "destructive"
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting note:', error)
       toast({
         title: "Error",
-        description: "Failed to delete note",
+        description: error.message || "Failed to delete note",
         variant: "destructive"
       })
     }
   }
 
   useEffect(() => {
-    fetchNotes()
+    if (user) {
+      fetchNotes()
+    }
   }, [user])
 
   return {
