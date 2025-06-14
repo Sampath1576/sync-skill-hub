@@ -9,14 +9,15 @@ export function useSupabaseAuth() {
   useEffect(() => {
     if (isLoaded && user) {
       console.log('Setting up Supabase session for user:', user.id)
-      // Create a basic session object for Supabase
+      
+      // Create a basic session object for Supabase with string user ID
       const sessionData = {
         access_token: user.id,
         refresh_token: user.id,
         expires_in: 3600,
         token_type: 'bearer' as const,
         user: {
-          id: user.id,
+          id: user.id, // Keep as string, don't convert to UUID
           email: user.primaryEmailAddress?.emailAddress || '',
           user_metadata: {
             first_name: user.firstName,
@@ -43,7 +44,7 @@ export function useSupabaseAuth() {
             const { error: insertError } = await supabase
               .from('profiles')
               .insert({
-                id: user.id,
+                id: user.id, // Use string ID directly
                 first_name: user.firstName,
                 last_name: user.lastName,
                 username: user.username
