@@ -1,3 +1,4 @@
+
 import { useState } from "react"
 import { Header } from "@/components/Header"
 import { AppSidebar } from "@/components/AppSidebar"
@@ -18,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Calendar, Plus, Filter, Edit, Trash2 } from "lucide-react"
-import { useSupabaseTasks } from "@/hooks/useSupabaseTasks"
+import { useLocalTasks } from "@/hooks/useLocalTasks"
 
 export default function Tasks() {
   const [view, setView] = useState("list")
@@ -30,7 +31,7 @@ export default function Tasks() {
   const [newTaskDueDate, setNewTaskDueDate] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   
-  const { tasks, isLoading, createTask, updateTask, deleteTask, toggleTaskCompletion } = useSupabaseTasks()
+  const { tasks, isLoading, createTask, updateTask, deleteTask, toggleTaskCompletion } = useLocalTasks()
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -41,6 +42,7 @@ export default function Tasks() {
     }
   }
 
+  // Sort tasks to put completed ones at the bottom
   const getSortedTasks = () => {
     return [...tasks].sort((a, b) => {
       if (a.completed !== b.completed) {
@@ -50,6 +52,7 @@ export default function Tasks() {
     })
   }
 
+  // Filter tasks based on status
   const getFilteredTasks = () => {
     const sortedTasks = getSortedTasks()
     if (statusFilter === "all") return sortedTasks
@@ -80,7 +83,7 @@ export default function Tasks() {
       title: newTaskTitle,
       description: newTaskDescription,
       priority: newTaskPriority,
-      due_date: newTaskDueDate || undefined
+      due_date: newTaskDueDate ? new Date(newTaskDueDate).toISOString() : undefined
     }
     
     if (editingTask) {
