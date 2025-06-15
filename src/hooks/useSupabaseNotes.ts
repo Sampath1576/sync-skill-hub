@@ -45,7 +45,7 @@ export function useSupabaseNotes() {
           // Transform the data to ensure favorite field exists
           const transformedNotes = (data || []).map(note => ({
             ...note,
-            favorite: note.favorite || false
+            favorite: (note as any).favorite || false
           }))
           setNotes(transformedNotes)
         }
@@ -95,7 +95,7 @@ export function useSupabaseNotes() {
         return
       }
 
-      setNotes(prev => [{...data, favorite: data.favorite || false}, ...prev])
+      setNotes(prev => [{...data, favorite: (data as any).favorite || false}, ...prev])
       
       toast({
         title: "Note created",
@@ -132,7 +132,7 @@ export function useSupabaseNotes() {
       }
 
       setNotes(prev => prev.map(note => 
-        note.id === id ? {...data, favorite: data.favorite || false} : note
+        note.id === id ? {...data, favorite: (data as any).favorite || false} : note
       ))
       
       toast({
@@ -173,10 +173,10 @@ export function useSupabaseNotes() {
       }
 
       setNotes(prev => prev.map(n => 
-        n.id === id ? {...data, favorite: data.favorite || false} : n
+        n.id === id ? {...data, favorite: (data as any).favorite || false} : n
       ))
       
-      const favoriteStatus = data.favorite || false
+      const favoriteStatus = (data as any).favorite || false
       toast({
         title: favoriteStatus ? "Added to favorites" : "Removed from favorites",
         description: `"${data.title}" has been ${favoriteStatus ? 'added to' : 'removed from'} favorites`,
