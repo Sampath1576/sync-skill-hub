@@ -1,4 +1,3 @@
-
 import { Header } from "@/components/Header"
 import { AppSidebar } from "@/components/AppSidebar"
 import { useState, useEffect } from "react"
@@ -130,11 +129,20 @@ export default function AITips() {
   }, [])
 
   useEffect(() => {
-    // Show tips that haven't been applied yet
+    // Always ensure we have 4 tips displayed
     const unappliedTips = allTips.filter(tip => !appliedTips.includes(tip.id))
-    const newTips = getRandomTips(unappliedTips, 4)
-    setDisplayedTips(newTips)
-    setCurrentTipIndices(newTips.map(tip => allTips.findIndex(t => t.id === tip.id)))
+    
+    if (unappliedTips.length >= 4) {
+      // If we have enough unapplied tips, show them
+      const newTips = getRandomTips(unappliedTips, 4)
+      setDisplayedTips(newTips)
+      setCurrentTipIndices(newTips.map(tip => allTips.findIndex(t => t.id === tip.id)))
+    } else {
+      // If not enough unapplied tips, show all available tips (mix of applied and unapplied)
+      const newTips = getRandomTips(allTips, 4)
+      setDisplayedTips(newTips)
+      setCurrentTipIndices(newTips.map(tip => allTips.findIndex(t => t.id === tip.id)))
+    }
   }, [appliedTips, allTips])
 
   const refreshTips = async () => {
@@ -145,22 +153,19 @@ export default function AITips() {
     })
     
     setTimeout(() => {
-      // Get tips that haven't been applied yet
+      // Always show 4 tips, prioritizing unapplied ones but ensuring we never show empty
       const unappliedTips = allTips.filter(tip => !appliedTips.includes(tip.id))
       
-      if (unappliedTips.length > 0) {
-        // Get new tips, excluding currently displayed ones if possible
+      if (unappliedTips.length >= 4) {
+        // Get new unapplied tips, excluding currently displayed ones if possible
         const newTips = getRandomTips(unappliedTips, 4, currentTipIndices)
-        
-        // If we got the same tips (not enough variety), still show them but shuffle order
-        if (newTips.length === displayedTips.length && 
-            newTips.every(tip => displayedTips.some(dt => dt.id === tip.id))) {
-          const shuffledTips = [...newTips].sort(() => Math.random() - 0.5)
-          setDisplayedTips(shuffledTips)
-        } else {
-          setDisplayedTips(newTips)
-        }
-        
+        setDisplayedTips(newTips)
+        setCurrentTipIndices(newTips.map(tip => allTips.findIndex(t => t.id === tip.id)))
+      } else {
+        // Not enough unapplied tips, so mix applied and unapplied tips
+        // Exclude currently displayed tips to ensure refresh shows different content
+        const newTips = getRandomTips(allTips, 4, currentTipIndices)
+        setDisplayedTips(newTips)
         setCurrentTipIndices(newTips.map(tip => allTips.findIndex(t => t.id === tip.id)))
       }
       
@@ -195,9 +200,6 @@ export default function AITips() {
       setAppliedTips(newAppliedTips)
       localStorage.setItem('skillsync_applied_tips', JSON.stringify(newAppliedTips))
       
-      // Remove the applied tip from displayed tips
-      setDisplayedTips(prev => prev.filter(tip => tip.id !== selectedTip.id))
-      
       toast({
         title: "Tip Applied Successfully!",
         description: `"${selectedTip.title}" has been added to your productivity plan!`,
@@ -205,6 +207,22 @@ export default function AITips() {
       
       setIsDialogOpen(false)
       setSelectedTip(null)
+      
+      // After applying a tip, refresh the displayed tips to show new ones
+      setTimeout(() => {
+        const unappliedTips = allTips.filter(tip => !newAppliedTips.includes(tip.id))
+        
+        if (unappliedTips.length >= 4) {
+          const newTips = getRandomTips(unappliedTips, 4)
+          setDisplayedTips(newTips)
+          setCurrentTipIndices(newTips.map(tip => allTips.findIndex(t => t.id === tip.id)))
+        } else {
+          // Mix applied and unapplied if not enough unapplied tips
+          const newTips = getRandomTips(allTips, 4, currentTipIndices)
+          setDisplayedTips(newTips)
+          setCurrentTipIndices(newTips.map(tip => allTips.findIndex(t => t.id === tip.id)))
+        }
+      }, 100)
     }
   }
 
@@ -238,12 +256,6 @@ export default function AITips() {
                 />
               ))}
             </div>
-
-            {displayedTips.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">You've applied all available tips! Great job on your productivity journey.</p>
-              </div>
-            )}
 
             <ProductivityProfileCard />
           </div>
