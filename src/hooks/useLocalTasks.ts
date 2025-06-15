@@ -1,7 +1,5 @@
 
 import { useState, useEffect } from "react"
-import { useUser } from "@clerk/clerk-react"
-import { useStockData } from "@/contexts/StockDataContext"
 import { useToast } from "@/hooks/use-toast"
 
 interface Task {
@@ -9,8 +7,8 @@ interface Task {
   title: string
   description: string
   completed: boolean
-  priority: 'low' | 'medium' | 'high'
-  due_date: string
+  priority: "high" | "medium" | "low"
+  due_date?: string
   created_at: string
   updated_at: string
 }
@@ -18,139 +16,182 @@ interface Task {
 export function useLocalTasks() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const { user } = useUser()
-  const { isUsingStockData, stockData, updateStockData } = useStockData()
   const { toast } = useToast()
 
-  const getUserStorageKey = () => {
-    return user ? `skillsync_tasks_${user.id}` : 'skillsync_tasks_guest'
-  }
-
-  const loadTasks = () => {
-    if (!user) {
-      setIsLoading(false)
-      return
-    }
-
-    if (isUsingStockData) {
-      setTasks(stockData.tasks)
-    } else {
-      const storageKey = getUserStorageKey()
-      const savedTasks = localStorage.getItem(storageKey)
-      
-      if (savedTasks) {
-        try {
-          const parsedTasks = JSON.parse(savedTasks)
-          setTasks(parsedTasks)
-        } catch (error) {
-          console.error('Error parsing saved tasks:', error)
-          setTasks([])
+  // Load tasks from localStorage on mount
+  useEffect(() => {
+    const loadTasks = () => {
+      try {
+        const storedTasks = localStorage.getItem('skillsync_tasks')
+        if (storedTasks) {
+          setTasks(JSON.parse(storedTasks))
+        } else {
+          // Initialize with sample tasks for first-time users
+          const sampleTasks: Task[] = [
+            {
+              id: '1',
+              title: 'Complete Project Setup',
+              description: 'Set up your workspace and familiarize yourself with SkillSync features',
+              priority: 'high',
+              due_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+              completed: false,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            },
+            {
+              id: '2',
+              title: 'Review Sample Notes',
+              description: 'Go through the sample notes and customize them to your needs',
+              priority: 'medium',
+              due_date: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
+              completed: false,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            },
+            {
+              id: '3',
+              title: 'Schedule First Event',
+              description: 'Try creating your first event in the Calendar section',
+              priority: 'medium',
+              due_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+              completed: false,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            },
+            {
+              id: '4',
+              title: 'Welcome Task - Getting Started',
+              description: 'This is a sample completed task to show how progress tracking works',
+              priority: 'low',
+              due_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+              completed: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+          ]
+          setTasks(sampleTasks)
+          localStorage.setItem('skillsync_tasks', JSON.stringify(sampleTasks))
         }
-      } else {
-        // Initialize with empty array for new users
-        setTasks([])
+      } catch (error) {
+        console.error('Error loading tasks:', error)
+      } finally {
+        setIsLoading(false)
       }
     }
-    setIsLoading(false)
-  }
 
-  const saveTasks = (updatedTasks: Task[]) => {
-    if (!user) return
+    loadTasks()
+  }, [])
 
-    if (isUsingStockData) {
-      updateStockData({ tasks: updatedTasks })
-    } else {
-      const storageKey = getUserStorageKey()
-      localStorage.setItem(storageKey, JSON.stringify(updatedTasks))
-    }
+  const saveTasksToStorage = (updatedTasks: Task[]) => {
+    localStorage.setItem('skillsync_tasks', JSON.stringify(updatedTasks))
+    setTasks(updatedTasks)
   }
 
   const createTask = async (taskData: {
     title: string
     description: string
-    priority: 'low' | 'medium' | 'high'
+    priority: "high" | "medium" | "low"
     due_date?: string
   }) => {
-    if (!user) return
-
-    const newTask: Task = {
-      id: crypto.randomUUID(),
-      title: taskData.title,
-      description: taskData.description,
-      completed: false,
-      priority: taskData.priority,
-      due_date: taskData.due_date || '',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+    try {
+      const newTask: Task = {
+        id: Date.now().toString(),
+        ...taskData,
+        completed: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
+      const updatedTasks = [newTask, ...tasks]
+      saveTasksToStorage(updatedTasks)
+      
+      toast({
+        title: "Task created",
+        description: `"${taskData.title}" has been created`,
+      })
+      return newTask
+    } catch (error: any) {
+      console.error('Error creating task:', error)
+      toast({
+        title: "Error",
+        description: "Failed to create task",
+        variant: "destructive"
+      })
     }
-
-    const updatedTasks = [newTask, ...tasks]
-    setTasks(updatedTasks)
-    saveTasks(updatedTasks)
-
-    toast({
-      title: "Task created",
-      description: `"${taskData.title}" has been created`,
-    })
-    return newTask
   }
 
   const updateTask = async (id: string, taskData: {
     title: string
     description: string
-    priority: 'low' | 'medium' | 'high'
+    priority: "high" | "medium" | "low"
     due_date?: string
-    completed?: boolean
   }) => {
-    const updatedTasks = tasks.map(task =>
-      task.id === id
-        ? { 
-            ...task, 
-            ...taskData, 
-            due_date: taskData.due_date || task.due_date,
-            updated_at: new Date().toISOString() 
-          }
-        : task
-    )
-    setTasks(updatedTasks)
-    saveTasks(updatedTasks)
-
-    toast({
-      title: "Task updated",
-      description: `"${taskData.title}" has been updated`,
-    })
-  }
-
-  const deleteTask = async (id: string) => {
-    const updatedTasks = tasks.filter(task => task.id !== id)
-    setTasks(updatedTasks)
-    saveTasks(updatedTasks)
-
-    toast({
-      title: "Task deleted",
-      description: "Task has been deleted",
-      variant: "destructive"
-    })
+    try {
+      const updatedTasks = tasks.map(task => 
+        task.id === id 
+          ? { ...task, ...taskData, updated_at: new Date().toISOString() }
+          : task
+      )
+      saveTasksToStorage(updatedTasks)
+      
+      toast({
+        title: "Task updated",
+        description: "Task has been successfully updated",
+      })
+      return updatedTasks.find(task => task.id === id)
+    } catch (error: any) {
+      console.error('Error updating task:', error)
+      toast({
+        title: "Error",
+        description: "Failed to update task",
+        variant: "destructive"
+      })
+    }
   }
 
   const toggleTaskCompletion = async (id: string) => {
-    const task = tasks.find(t => t.id === id)
-    if (!task) return
-
-    const updatedTask = {
-      title: task.title,
-      description: task.description,
-      priority: task.priority,
-      due_date: task.due_date,
-      completed: !task.completed
+    try {
+      const updatedTasks = tasks.map(task => 
+        task.id === id 
+          ? { ...task, completed: !task.completed, updated_at: new Date().toISOString() }
+          : task
+      )
+      saveTasksToStorage(updatedTasks)
+      
+      const task = updatedTasks.find(t => t.id === id)
+      toast({
+        title: task?.completed ? "Task completed" : "Task reopened",
+        description: task?.completed ? "Great job!" : "Task marked as pending",
+      })
+    } catch (error: any) {
+      console.error('Error toggling task:', error)
+      toast({
+        title: "Error",
+        description: "Failed to update task",
+        variant: "destructive"
+      })
     }
-
-    await updateTask(id, updatedTask)
   }
 
-  useEffect(() => {
-    loadTasks()
-  }, [user, isUsingStockData, stockData])
+  const deleteTask = async (id: string) => {
+    try {
+      const updatedTasks = tasks.filter(task => task.id !== id)
+      saveTasksToStorage(updatedTasks)
+      
+      toast({
+        title: "Task deleted",
+        description: "Task has been removed",
+        variant: "destructive"
+      })
+    } catch (error: any) {
+      console.error('Error deleting task:', error)
+      toast({
+        title: "Error",
+        description: "Failed to delete task",
+        variant: "destructive"
+      })
+    }
+  }
 
   return {
     tasks,
@@ -159,6 +200,6 @@ export function useLocalTasks() {
     updateTask,
     deleteTask,
     toggleTaskCompletion,
-    refetch: loadTasks
+    refetch: () => {}
   }
 }

@@ -3,11 +3,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { SearchProvider } from "@/contexts/SearchContext";
 import { UserProvider } from "@/contexts/UserContext";
-import { SignedIn, SignedOut, useUser } from "@clerk/clerk-react";
+import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import Notes from "./pages/Notes";
@@ -29,29 +29,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// Protected Route component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <SignedIn>
-      {children}
-    </SignedIn>
-  );
-};
-
-// Public Route component (redirects to dashboard if signed in)
-const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <>
-      <SignedOut>
-        {children}
-      </SignedOut>
-      <SignedIn>
-        <Navigate to="/dashboard" replace />
-      </SignedIn>
-    </>
-  );
-};
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="light" storageKey="skillsync-ui-theme">
@@ -64,44 +41,49 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={
-                  <PublicRoute>
-                    <Login />
-                  </PublicRoute>
+                  <>
+                    <SignedOut>
+                      <Login />
+                    </SignedOut>
+                    <SignedIn>
+                      <Dashboard />
+                    </SignedIn>
+                  </>
                 } />
                 <Route path="/dashboard" element={
-                  <ProtectedRoute>
+                  <SignedIn>
                     <Dashboard />
-                  </ProtectedRoute>
+                  </SignedIn>
                 } />
                 <Route path="/notes" element={
-                  <ProtectedRoute>
+                  <SignedIn>
                     <Notes />
-                  </ProtectedRoute>
+                  </SignedIn>
                 } />
                 <Route path="/tasks" element={
-                  <ProtectedRoute>
+                  <SignedIn>
                     <Tasks />
-                  </ProtectedRoute>
+                  </SignedIn>
                 } />
                 <Route path="/calendar" element={
-                  <ProtectedRoute>
+                  <SignedIn>
                     <Calendar />
-                  </ProtectedRoute>
+                  </SignedIn>
                 } />
                 <Route path="/progress" element={
-                  <ProtectedRoute>
+                  <SignedIn>
                     <Progress />
-                  </ProtectedRoute>
+                  </SignedIn>
                 } />
                 <Route path="/ai-tips" element={
-                  <ProtectedRoute>
+                  <SignedIn>
                     <AITips />
-                  </ProtectedRoute>
+                  </SignedIn>
                 } />
                 <Route path="/settings" element={
-                  <ProtectedRoute>
+                  <SignedIn>
                     <Settings />
-                  </ProtectedRoute>
+                  </SignedIn>
                 } />
                 <Route path="*" element={<NotFound />} />
               </Routes>

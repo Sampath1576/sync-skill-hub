@@ -1,31 +1,18 @@
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
-import { Link, useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { Eye, EyeOff, ArrowLeft } from "lucide-react"
 import { SignIn, SignUp } from "@clerk/clerk-react"
-import { useUser } from "@clerk/clerk-react"
 
 export default function Login() {
   const [isSignUp, setIsSignUp] = useState(false)
   const { toast } = useToast()
-  const { isLoaded, isSignedIn } = useUser()
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      navigate('/dashboard', { replace: true })
-    }
-  }, [isLoaded, isSignedIn, navigate])
-
-  if (isLoaded && isSignedIn) {
-    return null // Will redirect via useEffect
-  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -64,7 +51,6 @@ export default function Login() {
             {isSignUp ? (
               <SignUp 
                 fallbackRedirectUrl="/dashboard"
-                signInFallbackRedirectUrl="/dashboard"
                 appearance={{
                   elements: {
                     rootBox: "mx-auto",
@@ -75,7 +61,6 @@ export default function Login() {
             ) : (
               <SignIn 
                 fallbackRedirectUrl="/dashboard"
-                signUpFallbackRedirectUrl="/dashboard"
                 appearance={{
                   elements: {
                     rootBox: "mx-auto",

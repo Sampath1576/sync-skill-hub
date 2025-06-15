@@ -9,14 +9,17 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ThemeToggle } from "./ThemeToggle"
 import { useGlobalSearch } from "@/hooks/useGlobalSearch"
+import { useSupabaseNotifications } from "@/hooks/useSupabaseNotifications"
 import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useClerk, useUser } from "@clerk/clerk-react"
+import { formatDistanceToNow } from "date-fns"
 
 export function Header() {
   const [searchQuery, setSearchQuery] = useState("")
   const { search, results, isLoading } = useGlobalSearch()
   const [isNotificationOpen, setIsNotificationOpen] = useState(false)
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useSupabaseNotifications()
   const navigate = useNavigate()
   const { signOut } = useClerk()
   const { user } = useUser()
@@ -35,6 +38,15 @@ export function Header() {
   const handleSearchResultClick = (result: any) => {
     navigate(result.url)
     setSearchQuery("")
+  }
+
+  const handleNotificationClick = (notification: any) => {
+    if (!notification.read) {
+      markAsRead(notification.id)
+    }
+    if (notification.event_id) {
+      navigate("/calendar")
+    }
   }
 
   return (
@@ -78,21 +90,60 @@ export function Header() {
         <div className="flex items-center gap-3">
           <ThemeToggle />
           
-          {/* Notifications - Simplified without Supabase */}
+          {/* Notifications */}
           <Popover open={isNotificationOpen} onOpenChange={setIsNotificationOpen}>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="sm" className="relative h-9 w-9 rounded-full">
                 <Bell className="h-4 w-4" />
+                {unreadCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center">
+                    {unreadCount}
+                  </Badge>
+                )}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0" align="end">
               <div className="p-4 border-b flex items-center justify-between">
                 <h3 className="font-semibold">Notifications</h3>
+                {unreadCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={markAllAsRead}>
+                    Mark all read
+                  </Button>
+                )}
               </div>
               <ScrollArea className="h-80">
-                <div className="p-4 text-center text-muted-foreground">
-                  No notifications yet
-                </div>
+                {notifications.length === 0 ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    No notifications yet
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        className={`p-3 hover:bg-muted cursor-pointer border-b last:border-b-0 ${
+                          !notification.read ? 'bg-blue-50 dark:bg-blue-950/20' : ''
+                        }`}
+                        onClick={() => handleNotificationClick(notification)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{notification.title}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                            </p>
+                          </div>
+                          {!notification.read && (
+                            <div className="w-2 h-2 bg-blue-500 rounded-full ml-2 mt-1"></div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </ScrollArea>
             </PopoverContent>
           </Popover>
