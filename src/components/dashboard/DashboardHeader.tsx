@@ -3,10 +3,10 @@ import { Button } from "@/components/ui/button"
 import { Brain } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
-import { User } from "@clerk/clerk-react"
+import { useUser } from "@clerk/clerk-react"
 
 interface DashboardHeaderProps {
-  user: User | null | undefined
+  user: ReturnType<typeof useUser>['user']
   totalNotes: number
   favoriteNotes: number
   totalTasks: number
