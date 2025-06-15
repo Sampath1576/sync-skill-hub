@@ -60,7 +60,7 @@ export default function Login() {
               />
             ) : (
               <SignIn 
-                fallbackRedirectUrl="/dashboard"
+                fallbackRedirectUrl="src/pages/dashboard"
                 appearance={{
                   elements: {
                     rootBox: "mx-auto",
