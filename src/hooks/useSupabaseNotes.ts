@@ -42,7 +42,12 @@ export function useSupabaseNotes() {
             variant: "destructive"
           })
         } else {
-          setNotes(data || [])
+          // Transform the data to ensure favorite field exists
+          const transformedNotes = (data || []).map(note => ({
+            ...note,
+            favorite: note.favorite || false
+          }))
+          setNotes(transformedNotes)
         }
       } catch (error) {
         console.error('Error loading notes:', error)
@@ -90,7 +95,7 @@ export function useSupabaseNotes() {
         return
       }
 
-      setNotes(prev => [data, ...prev])
+      setNotes(prev => [{...data, favorite: data.favorite || false}, ...prev])
       
       toast({
         title: "Note created",
@@ -127,7 +132,7 @@ export function useSupabaseNotes() {
       }
 
       setNotes(prev => prev.map(note => 
-        note.id === id ? data : note
+        note.id === id ? {...data, favorite: data.favorite || false} : note
       ))
       
       toast({
@@ -168,12 +173,13 @@ export function useSupabaseNotes() {
       }
 
       setNotes(prev => prev.map(n => 
-        n.id === id ? data : n
+        n.id === id ? {...data, favorite: data.favorite || false} : n
       ))
       
+      const favoriteStatus = data.favorite || false
       toast({
-        title: data.favorite ? "Added to favorites" : "Removed from favorites",
-        description: `"${data.title}" has been ${data.favorite ? 'added to' : 'removed from'} favorites`,
+        title: favoriteStatus ? "Added to favorites" : "Removed from favorites",
+        description: `"${data.title}" has been ${favoriteStatus ? 'added to' : 'removed from'} favorites`,
       })
     } catch (error: any) {
       console.error('Error toggling favorite:', error)

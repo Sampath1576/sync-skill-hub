@@ -44,7 +44,12 @@ export function useSupabaseTasks() {
             variant: "destructive"
           })
         } else {
-          setTasks(data || [])
+          // Transform the data to ensure proper typing
+          const transformedTasks = (data || []).map(task => ({
+            ...task,
+            priority: (task.priority as "high" | "medium" | "low") || "medium"
+          }))
+          setTasks(transformedTasks)
         }
       } catch (error) {
         console.error('Error loading tasks:', error)
@@ -97,7 +102,11 @@ export function useSupabaseTasks() {
         return
       }
 
-      setTasks(prev => [data, ...prev])
+      const transformedTask = {
+        ...data,
+        priority: (data.priority as "high" | "medium" | "low") || "medium"
+      }
+      setTasks(prev => [transformedTask, ...prev])
       
       toast({
         title: "Task created",
@@ -142,8 +151,12 @@ export function useSupabaseTasks() {
         return
       }
 
+      const transformedTask = {
+        ...data,
+        priority: (data.priority as "high" | "medium" | "low") || "medium"
+      }
       setTasks(prev => prev.map(task => 
-        task.id === id ? data : task
+        task.id === id ? transformedTask : task
       ))
       
       toast({
@@ -186,13 +199,17 @@ export function useSupabaseTasks() {
         return
       }
 
+      const transformedTask = {
+        ...data,
+        priority: (data.priority as "high" | "medium" | "low") || "medium"
+      }
       setTasks(prev => prev.map(t => 
-        t.id === id ? data : t
+        t.id === id ? transformedTask : t
       ))
       
       toast({
-        title: data.completed ? "Task completed" : "Task reopened",
-        description: data.completed ? "Great job!" : "Task marked as pending",
+        title: transformedTask.completed ? "Task completed" : "Task reopened",
+        description: transformedTask.completed ? "Great job!" : "Task marked as pending",
       })
     } catch (error: any) {
       console.error('Error toggling task:', error)
