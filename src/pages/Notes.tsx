@@ -8,7 +8,7 @@ import { NotesGrid } from "@/components/notes/NotesGrid"
 import { EmptyNotesState } from "@/components/notes/EmptyNotesState"
 import { CreateNoteDialog } from "@/components/notes/CreateNoteDialog"
 import { Plus } from "lucide-react"
-import { useLocalNotes } from "@/hooks/useLocalNotes"
+import { useSupabaseNotes } from "@/hooks/useSupabaseNotes"
 
 export default function Notes() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -17,7 +17,7 @@ export default function Notes() {
   const [newNoteContent, setNewNoteContent] = useState("")
   const [editingNote, setEditingNote] = useState<any>(null)
   
-  const { notes, isLoading, createNote, updateNote, deleteNote, toggleFavorite } = useLocalNotes()
+  const { notes, isLoading, createNote, updateNote, deleteNote, toggleFavorite } = useSupabaseNotes()
 
   const filteredNotes = notes.filter(note =>
     note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
