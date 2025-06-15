@@ -194,6 +194,45 @@ export default function AITips() {
     setIsDialogOpen(true)
   }
 
+  const applyAllTips = () => {
+    const unappliedDisplayedTips = displayedTips.filter(tip => !appliedTips.includes(tip.id))
+    
+    if (unappliedDisplayedTips.length === 0) {
+      toast({
+        title: "All Tips Already Applied",
+        description: "All currently displayed tips have already been applied!",
+      })
+      return
+    }
+
+    const newAppliedTipIds = unappliedDisplayedTips.map(tip => tip.id)
+    const newAppliedTips = [...appliedTips, ...newAppliedTipIds]
+    
+    setAppliedTips(newAppliedTips)
+    localStorage.setItem('skillsync_applied_tips', JSON.stringify(newAppliedTips))
+    
+    toast({
+      title: "All Tips Applied Successfully!",
+      description: `Applied ${unappliedDisplayedTips.length} productivity tip${unappliedDisplayedTips.length === 1 ? '' : 's'} to your plan!`,
+    })
+    
+    // Refresh the displayed tips to show new ones
+    setTimeout(() => {
+      const unappliedTips = allTips.filter(tip => !newAppliedTips.includes(tip.id))
+      
+      if (unappliedTips.length >= 4) {
+        const newTips = getRandomTips(unappliedTips, 4)
+        setDisplayedTips(newTips)
+        setCurrentTipIndices(newTips.map(tip => allTips.findIndex(t => t.id === tip.id)))
+      } else {
+        // Mix applied and unapplied if not enough unapplied tips
+        const newTips = getRandomTips(allTips, 4, currentTipIndices)
+        setDisplayedTips(newTips)
+        setCurrentTipIndices(newTips.map(tip => allTips.findIndex(t => t.id === tip.id)))
+      }
+    }, 100)
+  }
+
   const confirmApplyTip = () => {
     if (selectedTip) {
       const newAppliedTips = [...appliedTips, selectedTip.id]
@@ -226,6 +265,8 @@ export default function AITips() {
     }
   }
 
+  const hasUnappliedTips = displayedTips.some(tip => !appliedTips.includes(tip.id))
+
   return (
     <div className="flex h-screen bg-background">
       <AppSidebar />
@@ -238,6 +279,8 @@ export default function AITips() {
             <AITipsHeader 
               isRefreshing={isRefreshing}
               onRefresh={refreshTips}
+              onApplyAll={applyAllTips}
+              hasUnappliedTips={hasUnappliedTips}
             />
 
             <DailyInsightCard />
