@@ -28,6 +28,7 @@ export default function AITips() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [selectedTip, setSelectedTip] = useState<AITip | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [currentTipIndices, setCurrentTipIndices] = useState<number[]>([])
 
   const [allTips] = useState<AITip[]>([
     {
@@ -83,10 +84,42 @@ export default function AITips() {
       icon: BookOpen,
       color: "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400",
       instructions: "1. Create flashcards or notes for key concepts\n2. Review new material after 1 day\n3. Review again after 3 days if remembered correctly\n4. Next review after 1 week\n5. Final review after 2 weeks\n6. If you forget at any stage, restart the cycle\n7. Use apps like Anki or create a simple spreadsheet to track timing"
+    },
+    {
+      id: 7,
+      category: "Workflow",
+      title: "Single-Tasking Focus",
+      content: "Multitasking reduces productivity by up to 40%. Focus on one task at a time for better results and less mental fatigue.",
+      icon: Brain,
+      color: "bg-cyan-100 text-cyan-600 dark:bg-cyan-900/20 dark:text-cyan-400",
+      instructions: "1. Choose one task to work on at a time\n2. Close all unnecessary browser tabs and applications\n3. Put your phone in airplane mode or another room\n4. Set a specific time block for the task\n5. Work only on that task during the time block\n6. Take a break before moving to the next task"
+    },
+    {
+      id: 8,
+      category: "Environment",
+      title: "Workspace Optimization",
+      content: "A clutter-free workspace can improve focus by 12%. Organize your physical and digital environments for maximum productivity.",
+      icon: Target,
+      color: "bg-pink-100 text-pink-600 dark:bg-pink-900/20 dark:text-pink-400",
+      instructions: "1. Clear your desk of non-essential items\n2. Organize files in clearly labeled folders\n3. Use consistent naming conventions for documents\n4. Keep only current projects visible\n5. Clean your workspace at the end of each day\n6. Adjust lighting and temperature for comfort"
     }
   ])
 
   const [displayedTips, setDisplayedTips] = useState<AITip[]>([])
+
+  const getRandomTips = (availableTips: AITip[], count: number, excludeIndices: number[] = []) => {
+    const availableIndices = availableTips
+      .map((_, index) => index)
+      .filter(index => !excludeIndices.includes(index))
+    
+    if (availableIndices.length <= count) {
+      return availableTips.filter((_, index) => availableIndices.includes(index))
+    }
+    
+    const shuffled = [...availableIndices].sort(() => Math.random() - 0.5)
+    const selectedIndices = shuffled.slice(0, count)
+    return selectedIndices.map(index => availableTips[index])
+  }
 
   useEffect(() => {
     // Load applied tips from localStorage
@@ -94,10 +127,14 @@ export default function AITips() {
     if (stored) {
       setAppliedTips(JSON.parse(stored))
     }
-    
+  }, [])
+
+  useEffect(() => {
     // Show tips that haven't been applied yet
     const unappliedTips = allTips.filter(tip => !appliedTips.includes(tip.id))
-    setDisplayedTips(unappliedTips.slice(0, 4))
+    const newTips = getRandomTips(unappliedTips, 4)
+    setDisplayedTips(newTips)
+    setCurrentTipIndices(newTips.map(tip => allTips.findIndex(t => t.id === tip.id)))
   }, [appliedTips, allTips])
 
   const refreshTips = async () => {
@@ -111,13 +148,20 @@ export default function AITips() {
       // Get tips that haven't been applied yet
       const unappliedTips = allTips.filter(tip => !appliedTips.includes(tip.id))
       
-      if (unappliedTips.length >= 4) {
-        // Show different set of unapplied tips
-        const shuffled = [...unappliedTips].sort(() => Math.random() - 0.5)
-        setDisplayedTips(shuffled.slice(0, 4))
-      } else {
-        // If less than 4 unapplied tips, show what's available
-        setDisplayedTips(unappliedTips)
+      if (unappliedTips.length > 0) {
+        // Get new tips, excluding currently displayed ones if possible
+        const newTips = getRandomTips(unappliedTips, 4, currentTipIndices)
+        
+        // If we got the same tips (not enough variety), still show them but shuffle order
+        if (newTips.length === displayedTips.length && 
+            newTips.every(tip => displayedTips.some(dt => dt.id === tip.id))) {
+          const shuffledTips = [...newTips].sort(() => Math.random() - 0.5)
+          setDisplayedTips(shuffledTips)
+        } else {
+          setDisplayedTips(newTips)
+        }
+        
+        setCurrentTipIndices(newTips.map(tip => allTips.findIndex(t => t.id === tip.id)))
       }
       
       setIsRefreshing(false)
@@ -194,6 +238,12 @@ export default function AITips() {
                 />
               ))}
             </div>
+
+            {displayedTips.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">You've applied all available tips! Great job on your productivity journey.</p>
+              </div>
+            )}
 
             <ProductivityProfileCard />
           </div>
