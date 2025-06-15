@@ -13,6 +13,8 @@ import { useLocalEvents } from "@/hooks/useLocalEvents"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AITipsWidget } from "@/components/AITipsWidget"
 
+console.log("working")
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const { toast } = useToast()
